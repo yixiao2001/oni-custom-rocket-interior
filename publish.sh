@@ -21,7 +21,12 @@ STAGE_WIN='C:\Users\xiaoyi\Documents\oni-upload\CustomRocketInterior'
 CMD_EXE=/mnt/c/Windows/System32/cmd.exe
 
 TITLE="Custom Rocket Interior 自定义火箭舱内空间"
-DESCRIPTION="自定义太空员舱内部空间大小与墙体材质（宽高12-96格，钢/火成岩/中子质/玻璃）。Customize rocket habitat interior size (12-96 tiles) and wall material. 需要眼冒金星DLC / Spaced Out required. 源码 Source: https://github.com/yixiao2001/oni-custom-rocket-interior"
+# 富文本描述优先取 workshop-description.txt（BBCode 多行），否则用内置单行
+if [ -f workshop-description.txt ]; then
+  DESCRIPTION=$(cat workshop-description.txt)
+else
+  DESCRIPTION="自定义太空员舱内部空间大小与墙体材质（宽高12-96格，钢/火成岩/中子质/玻璃）。Customize rocket habitat interior size (12-96 tiles) and wall material. 需要眼冒金星DLC / Spaced Out required. 源码 Source: https://github.com/yixiao2001/oni-custom-rocket-interior"
+fi
 
 prepare() {
   echo "== 构建与打包 =="
@@ -43,6 +48,9 @@ prepare() {
   PUBLISHEDFILEID=0
   VDF="$UPLOAD_DIR/workshop.vdf"
   [ -f "$VDF" ] && PUBLISHEDFILEID=$(grep -oP '"publishedfileid"\s+"\K\d+' "$VDF" || echo 0)
+  # VDF 按行解析：把描述压成单行、换行写作字面 \n（steamcmd 提交时会还原为换行）
+  DESC_ONELINE=$(python3 -c "import sys; sys.stdout.write(sys.argv[1].replace(chr(10), chr(92)+'n'))" "$DESCRIPTION")
+
   cat > "$VDF" <<EOF
 "workshopitem"
 {
@@ -50,7 +58,7 @@ prepare() {
 	"publishedfileid"			"$PUBLISHEDFILEID"
 	"contentfolder"				"$STAGE_WIN"
 	"title"						"$TITLE"
-	"description"				"$DESCRIPTION"
+	"description"				"$DESC_ONELINE"
 	"visibility"				"0"
 	"changenote"				"v$VERSION"
 }
