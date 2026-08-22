@@ -1,0 +1,4 @@
+# mod 标识信息（KModHeader：仅解析 staticID/title/description）
+staticID: CustomRocketInterior
+title: Custom Rocket Interior
+description: 自定义太空员舱等火箭模块的内部空间大小 / Customize the interior size of rocket habitat modules

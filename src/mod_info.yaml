@@ -1,0 +1,8 @@
+# mod 功能元数据（新版必需文件，缺失会被判定为“不兼容的DLC配置”且不加载）
+# 注意：本 mod 的功能（火箭内部空间）只存在于《眼冒金星！》DLC，
+# 因此声明依赖该 DLC；在纯本体模式下会正确地显示为不兼容。
+requiredDlcIds:
+  - EXPANSION1_ID
+minimumSupportedBuild: 744825
+version: 0.2.0
+APIVersion: 2

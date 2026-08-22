@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- 注意：当前版本（U-54+）的缺氧游戏程序集基于 .NET Framework 4.8，必须对齐 -->
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>CustomRocketInterior</RootNamespace>
+    <AssemblyName>CustomRocketInterior</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Version>0.2.0</Version>
+    <!-- 在 Linux 上编译 net472 需要 .NET Framework 参考程序集包（自动从 NuGet 还原） -->
+    <AutomaticallyUseReferenceAssemblyPackages>true</AutomaticallyUseReferenceAssemblyPackages>
+    <!--
+      游戏相关路径（按需修改，也可用环境变量覆盖）：
+      ONI_MANAGED_DIR  游戏的 Managed 目录
+      ONI_MODS_DEV_DIR 游戏的本地开发 mod 目录（编译后自动部署到这里的子文件夹）
+    -->
+    <ONI_MANAGED_DIR Condition="'$(ONI_MANAGED_DIR)' == ''">$(ONI_MANAGED_DIR)</ONI_MANAGED_DIR>
+    <ONI_MANAGED_DIR Condition="'$(ONI_MANAGED_DIR)' == ''">/mnt/d/SteamLibrary/steamapps/common/OxygenNotIncluded/OxygenNotIncluded_Data/Managed</ONI_MANAGED_DIR>
+    <ONI_MODS_DEV_DIR Condition="'$(ONI_MODS_DEV_DIR)' == ''">$(ONI_MODS_DEV_DIR)</ONI_MODS_DEV_DIR>
+    <ONI_MODS_DEV_DIR Condition="'$(ONI_MODS_DEV_DIR)' == ''">/mnt/c/Users/xiaoyi/Documents/Klei/OxygenNotIncluded/mods/Dev</ONI_MODS_DEV_DIR>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      全部引用游戏自带的程序集，Private=false 表示不复制到输出目录。
+      mod 里永远不要自带 0Harmony.dll / UnityEngine.dll，直接用游戏加载的版本，
+      否则会因类型来自不同程序集而崩溃。
+    -->
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(ONI_MANAGED_DIR)/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>$(ONI_MANAGED_DIR)/Assembly-CSharp-firstpass.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(ONI_MANAGED_DIR)/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ONI_MANAGED_DIR)/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ONI_MANAGED_DIR)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PLib" Version="4.25.0" />
+  </ItemGroup>
+
+  <!-- 编译成功后自动部署到游戏 Dev mod 目录，游戏启动即加载 -->
+  <Target Name="DeployToDev" AfterTargets="Build" Condition="Exists('$(ONI_MODS_DEV_DIR)')">
+    <Message Importance="high" Text="Deploying mod to $(ONI_MODS_DEV_DIR)/CustomRocketInterior/" />
+    <!-- mod 本体 + 随包发布的第三方库（PLib.dll）；游戏程序集因 Private=false 不会出现在输出目录 -->
+    <ItemGroup>
+      <_DeployDlls Include="$(TargetDir)*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DeployDlls)" DestinationFolder="$(ONI_MODS_DEV_DIR)/CustomRocketInterior/" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/mod.yaml" DestinationFolder="$(ONI_MODS_DEV_DIR)/CustomRocketInterior/" SkipUnchangedFiles="false" Condition="Exists('$(MSBuildProjectDirectory)/mod.yaml')" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/mod_info.yaml" DestinationFolder="$(ONI_MODS_DEV_DIR)/CustomRocketInterior/" SkipUnchangedFiles="false" Condition="Exists('$(MSBuildProjectDirectory)/mod_info.yaml')" />
+  </Target>
+
+</Project>
