@@ -2,11 +2,14 @@
 # 一键发布到 Steam 创意工坊（appid 457140，Oxygen Not Included）
 #
 # 原理：WSL 里构建打包 → 内容与 workshop.vdf 暂存到 Windows 侧
-#       Documents/oni-upload/ → 通过 WSL interop 调用 Windows 版 steamcmd 上传。
+#       Documents/oni-upload/ → 弹出真实 Windows 控制台窗口运行 steamcmd 上传。
+#
+# 注意：不能通过 WSL 管道直接跑 steamcmd——stdout 被接管后，
+#       密码回显与回车输入都会失效，必须在真实控制台里交互。
 #
 # 用法：
 #   ./publish.sh                    # 构建+打包+生成 vdf，打印上传命令
-#   ./publish.sh --upload <Steam用户名>  # 直接上传（需输入密码 / Steam Guard）
+#   ./publish.sh --upload <Steam用户名>  # 弹出控制台窗口直接上传
 #
 # 首次运行创建新创意工坊物品；之后自动复用 publishedfileid 进行更新。
 set -euo pipefail
@@ -58,17 +61,29 @@ EOF
 echo "已生成 $VDF (publishedfileid=$PUBLISHEDFILEID)"
 
 if [ "${1:-}" = "--upload" ] && [ -n "${2:-}" ]; then
-  echo "== 上传中（按提示输入密码与 Steam Guard 码）=="
-  LOG="$UPLOAD_DIR/steamcmd.log"
+  echo "== 弹出 Windows 控制台窗口上传（在该窗口中输入密码/验证码）=="
+  # 生成批处理：日志重定向到文件（stdin 保持真实控制台，密码输入正常）
+  cat > "$UPLOAD_DIR/run-upload.cmd" <<BAT
+@echo off
+cd /d "%~dp0"
+steamcmd.exe +login $2 +workshop_build_item workshop.vdf >steamcmd.log 2>&1
+echo.
+echo ===== Upload finished. Full log below =====
+type steamcmd.log
+echo.
+pause
+BAT
   cd "$UPLOAD_DIR"
-  /mnt/c/Windows/System32/cmd.exe /c "steamcmd.exe +login $2 +workshop_build_item workshop.vdf +quit" 2>&1 | tee "$LOG"
+  # start 开独立控制台窗口，/wait 等 steamcmd 结束再回来解析结果
+  /mnt/c/Windows/System32/cmd.exe /c start "" /wait run-upload.cmd
 
-  if [ "$PUBLISHEDFILEID" = "0" ]; then
-    NEW_ID=$(grep -aoP '(?<=Uploaded new item ID: )\d+' "$LOG" | tail -1 || true)
-    if [ -n "${NEW_ID:-}" ]; then
-      sed -i 's/"publishedfileid"\t*"[^"]*"/"publishedfileid"\t\t\t\t"'"$NEW_ID"'"/' "$VDF"
-      echo "已把 publishedfileid=$NEW_ID 写回 workshop.vdf（以后更新会复用）"
-    fi
+  NEW_ID=""
+  if [ -f steamcmd.log ]; then
+    NEW_ID=$(grep -aoP '(?<=Uploaded new item ID: )\d+' steamcmd.log | tail -1 || true)
+  fi
+  if [ -n "$NEW_ID" ] && [ "$PUBLISHEDFILEID" = "0" ]; then
+    sed -i 's/"publishedfileid"\t*"[^"]*"/"publishedfileid"\t\t\t\t"'"$NEW_ID"'"/' "$VDF"
+    echo "已把 publishedfileid=$NEW_ID 写回 workshop.vdf（以后更新会复用）"
   fi
   echo "完成。物品页: https://steamcommunity.com/sharedfiles/filedetails/?id=${NEW_ID:-$PUBLISHEDFILEID}"
 else
@@ -77,8 +92,9 @@ else
 一切就绪。上传方式二选一：
 
 A) 本目录执行:  ./publish.sh --upload <你的Steam用户名>
+   （会弹出一个 Windows 控制台窗口，在其中输入密码与 Steam Guard 验证码）
 
-B) 打开 Windows CMD 执行:
+B) 自己开一个 Windows CMD 执行:
   cd C:\\Users\\$WIN_USER\\Documents\\oni-upload
   steamcmd.exe +login <你的Steam用户名> +workshop_build_item workshop.vdf +quit
 
