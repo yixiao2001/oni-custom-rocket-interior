@@ -57,10 +57,25 @@ See the source comments (header of `src/Core/InteriorResizer.cs`) for full detai
 ```bash
 ./build.sh      # compile + deploy into the game's Dev mods folder
 ./package.sh    # package an upload-ready workshop zip into release/
+./publish.sh    # publish/update to the Steam Workshop via Windows steamcmd
 ```
 
 - Building requires .NET SDK 8 and a copy of the game; configure paths via the `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` environment variables or directly in the csproj;
 - Inspect game code with: `ilspycmd -t TypeName <Managed dir>/Assembly-CSharp.dll`.
+
+### Publishing to the Steam Workshop
+
+The ONI client has no built-in Steam uploader, so this repo uses the official
+steamcmd pipeline:
+
+```bash
+./publish.sh --upload <your-steam-username>
+```
+
+The script builds, stages a clean content folder plus workshop.vdf under
+Windows `Documents/oni-upload/`, and invokes steamcmd. The first run creates
+the workshop item (password + Steam Guard required); later runs update it by
+reusing the stored publishedfileid.
 
 ```
 src/

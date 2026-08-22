@@ -61,11 +61,24 @@
 ```bash
 ./build.sh      # 编译 + 自动部署到 Dev mod 目录（需先配置游戏路径）
 ./package.sh    # 打包可上传的创意工坊 zip 到 release/
+./publish.sh    # 一键发布/更新 Steam 创意工坊（调用 Windows 版 steamcmd）
 ```
 
 - 编译需 .NET SDK 8 与游戏本体；游戏路径通过环境变量 `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` 或直接改 csproj 配置；
 - 反编译查源码：`ilspycmd -t 类名 <Managed目录>/Assembly-CSharp.dll`；
 - 项目结构与设计原则见下方目录树与代码注释。
+
+### 发布到 Steam 创意工坊
+
+ONI 客户端没有内置 Steam 上传器，本仓库用 Valve 官方 steamcmd 管线发布：
+
+```bash
+./publish.sh --upload <你的Steam用户名>
+```
+
+脚本会自动构建、打包、把干净内容与 workshop.vdf 暂存到 Windows 侧
+`Documents/oni-upload/` 并调用 steamcmd 上传。首次运行会创建新物品并要求
+输入密码与 Steam Guard 验证码；之后自动复用 publishedfileid 进行版本更新。
 
 ```
 src/
