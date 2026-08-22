@@ -68,6 +68,9 @@ prepare() {
   PUBLISHEDFILEID=0
   VDF="$UPLOAD_DIR/workshop.vdf"
   [ -f "$VDF" ] && PUBLISHEDFILEID=$(grep -oP '"publishedfileid"\s+"\K\d+' "$VDF" || echo 0)
+  # steamcmd 的 VDF 解析器按行读取，描述必须压成单行、用 \n 转义表示换行
+  DESC_ONELINE=$(python3 -c "import sys; sys.stdout.write(sys.argv[1].replace(chr(10), chr(92)+'n'))" "$DESCRIPTION")
+
   cat > "$VDF" <<EOF
 "workshopitem"
 {
@@ -75,7 +78,7 @@ prepare() {
 	"publishedfileid"			"$PUBLISHEDFILEID"
 	"contentfolder"				"$STAGE_WIN"
 	"title"						"$TITLE"
-	"description"				"$DESCRIPTION"
+	"description"				"$DESC_ONELINE"
 	"visibility"				"0"
 	"changenote"				"v$VERSION"
 }
