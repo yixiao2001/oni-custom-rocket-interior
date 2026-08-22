@@ -21,32 +21,7 @@ STAGE_WIN='C:\Users\xiaoyi\Documents\oni-upload\CustomRocketInterior'
 CMD_EXE=/mnt/c/Windows/System32/cmd.exe
 
 TITLE="Custom Rocket Interior 自定义火箭舱内空间"
-DESCRIPTION='[h1]自定义火箭舱内空间 / Custom Rocket Interior[/h1]
-
-[b]━━━ 中文 ━━━[/b]
-自定义《缺氧》太空员舱等火箭模块的内部空间大小与墙体材质。
-[list]
-[*]舱室宽高各 12–96 格自由调节（原版太空员舱仅 12×11），房间自动填满整个火箭内部世界
-[*]墙体材质四选一：钢 / 火成岩 / 中子质（不可破坏）/ 玻璃
-[*]内部世界全图去迷雾，无残留
-[*]游戏内设置界面：主菜单 → 模组 → 选项，对新建的火箭即时生效
-[*]出入口自动吸附左下角，气体/液体端口与控制站自动嵌入新墙线
-[/list]
-[b]提示：[/b]只影响新建的火箭（已建成的内部固化在存档中）。需要《眼冒金星！》DLC。
-
-[b]━━━ English ━━━[/b]
-Customize the interior size and wall material of rocket habitat modules in Oxygen Not Included.
-[list]
-[*]Width & height adjustable from 12 to 96 tiles each (vanilla Spacefarer Module is only 12x11); the room fills the entire interior world
-[*]Four wall materials: Steel / Igneous Rock / Neutronium (unbreakable) / Glass
-[*]Fog of war fully revealed inside rocket interiors
-[*]In-game options screen (Main Menu -> Mods -> Options); changes apply instantly to newly built rockets
-[*]Door snaps to the bottom-left corner; gas/liquid ports and control station are re-embedded automatically
-[/list]
-[b]Note:[/b] Only affects newly built rockets - existing interiors are baked into your save. Requires the Spaced Out! DLC.
-
-[url=https://github.com/yixiao2001/oni-custom-rocket-interior][b]GitHub 源码 / Source Code[/b][/url]
-适配 U59-744825 · Tested on build U59-744825'
+DESCRIPTION="自定义太空员舱内部空间大小与墙体材质（宽高12-96格，钢/火成岩/中子质/玻璃）。Customize rocket habitat interior size (12-96 tiles) and wall material. 需要眼冒金星DLC / Spaced Out required. 源码 Source: https://github.com/yixiao2001/oni-custom-rocket-interior"
 
 prepare() {
   echo "== 构建与打包 =="
@@ -68,9 +43,6 @@ prepare() {
   PUBLISHEDFILEID=0
   VDF="$UPLOAD_DIR/workshop.vdf"
   [ -f "$VDF" ] && PUBLISHEDFILEID=$(grep -oP '"publishedfileid"\s+"\K\d+' "$VDF" || echo 0)
-  # steamcmd 的 VDF 解析器按行读取，描述必须压成单行、用 \n 转义表示换行
-  DESC_ONELINE=$(python3 -c "import sys; sys.stdout.write(sys.argv[1].replace(chr(10), chr(92)+'n'))" "$DESCRIPTION")
-
   cat > "$VDF" <<EOF
 "workshopitem"
 {
@@ -78,7 +50,7 @@ prepare() {
 	"publishedfileid"			"$PUBLISHEDFILEID"
 	"contentfolder"				"$STAGE_WIN"
 	"title"						"$TITLE"
-	"description"				"$DESC_ONELINE"
+	"description"				"$DESCRIPTION"
 	"visibility"				"0"
 	"changenote"				"v$VERSION"
 }
