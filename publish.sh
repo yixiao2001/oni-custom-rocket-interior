@@ -40,7 +40,7 @@ echo "== 4/4 生成 workshop.vdf =="
 PUBLISHEDFILEID=0
 VDF="$UPLOAD_DIR/workshop.vdf"
 if [ -f "$VDF" ]; then
-  PUBLISHEDFILEID=$(grep -oP '(?<="publishedfileid"\s+")\d+' "$VDF" || echo 0)
+  PUBLISHEDFILEID=$(grep -oP '"publishedfileid"\s+"\K\d+' "$VDF" || echo 0)
 fi
 
 cat > "$VDF" <<EOF
