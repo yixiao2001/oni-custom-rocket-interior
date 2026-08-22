@@ -64,14 +64,16 @@ case "${1:-}" in
   prepare
   PASS_ARG=""
   [ -n "${3:-}" ] && PASS_ARG="$3"
-  # 无重定向！让 password / Steam Guard 提示全部实时可见
+  # 无重定向！让 password / Steam Guard 提示全部实时可见。
+  # 注意：批处理文件必须纯 ASCII —— 中文版 cmd 按 GBK 解析 .cmd，
+  # 写入 UTF-8 中文会被拆成乱码并破坏整行命令（'gged' 不是内部或外部命令）。
   cat > "$UPLOAD_DIR/run-login.cmd" <<BAT
 @echo off
 cd /d "%~dp0"
 title steamcmd login - $2
 steamcmd.exe +login $2 $PASS_ARG +quit
 echo.
-echo ===== 若上方出现 Logged in OK 即登录成功，凭据已缓存，可关闭本窗口 =====
+echo ===== If you saw "Logged in OK" above, credentials are cached. Close this window. =====
 pause
 BAT
   cd "$UPLOAD_DIR"
