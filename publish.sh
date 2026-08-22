@@ -9,7 +9,8 @@
 #
 # 用法：
 #   ./publish.sh                    # 构建+打包+生成 vdf，打印上传命令
-#   ./publish.sh --upload <Steam用户名>  # 弹出控制台窗口直接上传
+#   ./publish.sh --upload <Steam用户名>                # 弹出控制台窗口上传（交互输密码）
+#   ./publish.sh --upload <Steam用户名> <密码>          # 免输密码（Steam Guard 码仍需手输）
 #
 # 首次运行创建新创意工坊物品；之后自动复用 publishedfileid 进行更新。
 set -euo pipefail
@@ -61,12 +62,19 @@ EOF
 echo "已生成 $VDF (publishedfileid=$PUBLISHEDFILEID)"
 
 if [ "${1:-}" = "--upload" ] && [ -n "${2:-}" ]; then
-  echo "== 弹出 Windows 控制台窗口上传（在该窗口中输入密码/验证码）=="
-  # 生成批处理：日志重定向到文件（stdin 保持真实控制台，密码输入正常）
+  PASS_ARG=""
+  if [ -n "${3:-}" ]; then
+    # 免交互变体：密码直接写进命令行（注意：若密码含 % 需写成 %%）
+    PASS_ARG="\"$3\""
+    echo "== 使用命令行传入的密码（跳过密码输入）=="
+  fi
+  echo "== 弹出 Windows 控制台窗口上传（可能需要输入 Steam Guard 验证码）=="
+  echo "   小贴士：输验证码前先切到英文键盘(Win+空格)；不要在窗口内点击选中文字，"
+  # 生成批处理：日志重定向到文件；stdin 保持真实控制台
   cat > "$UPLOAD_DIR/run-upload.cmd" <<BAT
 @echo off
 cd /d "%~dp0"
-steamcmd.exe +login $2 +workshop_build_item workshop.vdf >steamcmd.log 2>&1
+steamcmd.exe +login $2 $PASS_ARG +workshop_build_item workshop.vdf >steamcmd.log 2>&1
 echo.
 echo ===== Upload finished. Full log below =====
 type steamcmd.log
