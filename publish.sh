@@ -100,6 +100,9 @@ BAT
   prepare
 
   cd "$UPLOAD_DIR"
+  # 清理历史遗留的孤儿 steamcmd（timeout 杀不掉孙进程导致的僵尸会话）
+  powershell.exe -NoProfile -Command "Stop-Process -Name steamcmd -Force -ErrorAction SilentlyContinue" >/dev/null 2>&1 || true
+  sleep 1
   echo "== 探测缓存的登录凭据 =="
   set +e
   timeout 45 "$CMD_EXE" /c "steamcmd.exe +login $2 +quit >login-probe.log 2>&1"
@@ -118,6 +121,8 @@ BAT
   timeout 900 "$CMD_EXE" /c "steamcmd.exe +login $2 +workshop_build_item workshop.vdf >steamcmd.log 2>&1"
   set -e
 
+  # 兜底清理本次可能挂住未退出的 steamcmd
+  powershell.exe -NoProfile -Command "Stop-Process -Name steamcmd -Force -ErrorAction SilentlyContinue" >/dev/null 2>&1 || true
   PUBLISHEDFILEID=$(grep -oP '"publishedfileid"\s+"\K\d+' workshop.vdf || echo 0)
   NEW_ID=""
   [ -f steamcmd.log ] && NEW_ID=$(grep -aoP '(?<=Uploaded new item ID: )\d+' steamcmd.log | tail -1 || true)
