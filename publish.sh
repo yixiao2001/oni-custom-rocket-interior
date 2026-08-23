@@ -21,9 +21,10 @@ STAGE_WIN='C:\Users\xiaoyi\Documents\oni-upload\CustomRocketInterior'
 CMD_EXE=/mnt/c/Windows/System32/cmd.exe
 
 TITLE="Custom Rocket Interior 自定义火箭舱内空间"
-# 富文本描述优先取 workshop-description.txt（BBCode 多行），否则用内置单行
+# 富文本描述取自 workshop-description.txt（BBCode），压成单行提交：
+# [h1]/[list]/[b] 都是块级或独立标记，去掉换行不影响渲染效果
 if [ -f workshop-description.txt ]; then
-  DESCRIPTION=$(cat workshop-description.txt)
+  DESCRIPTION=$(tr '\r\n' '  ' < workshop-description.txt)
 else
   DESCRIPTION="自定义太空员舱内部空间大小与墙体材质（宽高12-96格，钢/火成岩/中子质/玻璃）。Customize rocket habitat interior size (12-96 tiles) and wall material. 需要眼冒金星DLC / Spaced Out required. 源码 Source: https://github.com/yixiao2001/oni-custom-rocket-interior"
 fi
@@ -50,15 +51,16 @@ prepare() {
   [ -f "$VDF" ] && PUBLISHEDFILEID=$(grep -oP '"publishedfileid"\s+"\K\d+' "$VDF" || echo 0)
   # 注意：不带 title/description —— steamcmd 更新时未提供的字段保持不变，
   # 这样创意工坊页面上手工编辑的富文本描述不会被自动上传冲掉。
-  python3 - "$VDF" "$PUBLISHEDFILEID" "$STAGE_WIN" "$TITLE" "$VERSION" <<'GENEOF'
+  python3 - "$VDF" "$PUBLISHEDFILEID" "$STAGE_WIN" "$TITLE" "$VERSION" "$DESCRIPTION" <<'GENEOF'
 import sys
-vdf, pfid, folder, title, ver = sys.argv[1:6]
+vdf, pfid, folder, title, ver, desc = sys.argv[1:7]
 lines = [
     '"workshopitem"',
     '{',
     '\t"appid"\t\t\t\t\t\t"457140"',
     f'\t"publishedfileid"\t\t\t"{pfid}"',
     f'\t"contentfolder"\t\t\t\t"{folder}"',
+    f'\t"description"\t\t\t\t"{desc}"',
 ]
 if pfid == "0":
     lines.append(f'\t"title"\t\t\t\t\t\t"{title}"')
