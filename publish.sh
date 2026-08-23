@@ -48,18 +48,27 @@ prepare() {
   PUBLISHEDFILEID=0
   VDF="$UPLOAD_DIR/workshop.vdf"
   [ -f "$VDF" ] && PUBLISHEDFILEID=$(grep -oP '"publishedfileid"\s+"\K\d+' "$VDF" || echo 0)
-  cat > "$VDF" <<EOF
-"workshopitem"
-{
-	"appid"						"457140"
-	"publishedfileid"			"$PUBLISHEDFILEID"
-	"contentfolder"				"$STAGE_WIN"
-	"title"						"$TITLE"
-	"description"				"$DESCRIPTION"
-	"visibility"				"0"
-	"changenote"				"v$VERSION"
-}
-EOF
+  # 注意：不带 title/description —— steamcmd 更新时未提供的字段保持不变，
+  # 这样创意工坊页面上手工编辑的富文本描述不会被自动上传冲掉。
+  python3 - "$VDF" "$PUBLISHEDFILEID" "$STAGE_WIN" "$TITLE" "$VERSION" <<'GENEOF'
+import sys
+vdf, pfid, folder, title, ver = sys.argv[1:6]
+lines = [
+    '"workshopitem"',
+    '{',
+    '\t"appid"\t\t\t\t\t\t"457140"',
+    f'\t"publishedfileid"\t\t\t"{pfid}"',
+    f'\t"contentfolder"\t\t\t\t"{folder}"',
+]
+if pfid == "0":
+    lines.append(f'\t"title"\t\t\t\t\t\t"{title}"')
+lines += [
+    '\t"visibility"\t\t\t\t\t"0"',
+    f'\t"changenote"\t\t\t\t"v{ver}"',
+    '}',
+]
+open(vdf, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
+GENEOF
   echo "workshop.vdf 就绪 (publishedfileid=$PUBLISHEDFILEID)"
 }
 
