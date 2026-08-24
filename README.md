@@ -61,8 +61,9 @@
 ```bash
 ./build.sh      # 编译 + 自动部署到 Dev mod 目录（需先配置游戏路径）
 ./package.sh    # 打包可上传的创意工坊 zip 到 release/
-./publish.sh    # 一键发布/更新 Steam 创意工坊（调用 Windows 版 steamcmd）
 ```
+> ⚠️ **发布必须使用官方工具**：Steam 库 → 工具 → "Oxygen Not Included - Mod Uploader"。
+> 用 steamcmd 直接上传会产生游戏无法读取的散装内容格式，导致所有订阅者"下载失败"。
 
 - 编译需 .NET SDK 8 与游戏本体；游戏路径通过环境变量 `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` 或直接改 csproj 配置；
 - 反编译查源码：`ilspycmd -t 类名 <Managed目录>/Assembly-CSharp.dll`；

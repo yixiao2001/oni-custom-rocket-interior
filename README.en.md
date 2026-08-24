@@ -57,8 +57,9 @@ See the source comments (header of `src/Core/InteriorResizer.cs`) for full detai
 ```bash
 ./build.sh      # compile + deploy into the game's Dev mods folder
 ./package.sh    # package an upload-ready workshop zip into release/
-./publish.sh    # publish/update to the Steam Workshop via Windows steamcmd
 ```
+> ⚠️ **Publish only with the official tool**: Steam Library -> Tools -> "Oxygen Not Included - Mod Uploader".
+> Uploading via raw steamcmd produces a loose file layout the game cannot read; every subscriber gets a download failure.
 
 - Building requires .NET SDK 8 and a copy of the game; configure paths via the `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` environment variables or directly in the csproj;
 - Inspect game code with: `ilspycmd -t TypeName <Managed dir>/Assembly-CSharp.dll`.
