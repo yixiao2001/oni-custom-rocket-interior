@@ -17,7 +17,7 @@ Tested on build U59-744825 (base game + *Spaced Out!* DLC).
 ## Installation
 
 ### Option 1: Steam Workshop (recommended)
-Search for "Custom Rocket Interior" on the workshop and subscribe. (Link active after first release.)
+Subscribe directly: [steamcommunity.com/sharedfiles/filedetails/?id=3789310279](https://steamcommunity.com/sharedfiles/filedetails/?id=3789310279)
 
 ### Option 2: Manual
 1. Download the latest zip from [Releases](../../releases);

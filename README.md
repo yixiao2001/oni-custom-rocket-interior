@@ -21,7 +21,7 @@
 ## 安装
 
 ### 方式一：Steam 创意工坊（推荐）
-在创意工坊搜索 "Custom Rocket Interior" 订阅即可。（首次发布后此链接生效）
+直接订阅：[steamcommunity.com/sharedfiles/filedetails/?id=3789310279](https://steamcommunity.com/sharedfiles/filedetails/?id=3789310279)
 
 ### 方式二：手动安装
 1. 从 [Releases](../../releases) 下载最新 zip；
