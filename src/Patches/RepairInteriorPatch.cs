@@ -78,6 +78,7 @@ namespace CustomRocketInterior.Patches
                 int topWallNew = off.y + size.y - 3;    // 新顶墙行（H-3）
                 int bottomWallOld = off.y + 1;          // 旧底墙行
                 int bottomWallNew = off.y;              // 新底墙行（贴世界底边）
+                int shellLeftover = off.y + size.y - 1; // 旧壳层行（若此前做过壳层修复）
                 int left = off.x + 1;
                 int right = off.x + size.x - 2;
 
@@ -100,7 +101,7 @@ namespace CustomRocketInterior.Patches
                     }
                     int row = Grid.CellRow(b.NaturalBuildingCell());
                     if (row != topWallOld && row != topWallNew && row != bottomWallOld
-                        && row != bottomWallNew)
+                        && row != bottomWallNew && row != shellLeftover)
                     {
                         continue;
                     }
@@ -161,7 +162,7 @@ namespace CustomRocketInterior.Patches
                         continue;
                     }
                     int row = Grid.CellRow(b.NaturalBuildingCell());
-                    if (row != topWallOld && row != bottomWallOld)
+                    if (row != topWallOld && row != bottomWallOld && row != shellLeftover)
                     {
                         continue;
                     }
@@ -190,6 +191,7 @@ namespace CustomRocketInterior.Patches
                 // 格子整备（同步 API，无回调冲突）
                 SetRow(world, left, right, off.y, topWallNew, true);     // 新顶墙行 → 墙
                 SetRow(world, left, right, off.y, topWallOld, false);    // 旧顶墙行 → 真空
+                SetRow(world, left, right, off.y, shellLeftover, false); // 旧壳层行(若有) → 真空
                 SetRow(world, left, right, off.y, bottomWallOld, false); // 旧底墙行 → 真空(内部)
                 SetRow(world, left, right, off.y, bottomWallNew, true);  // 新底墙行 → 墙
                 // 左右侧墙补齐/收尾（底墙下移、顶墙上移）
@@ -200,6 +202,8 @@ namespace CustomRocketInterior.Patches
                 }
                 SetCell(world, left, topWallOld, false);
                 SetCell(world, right, topWallOld, false);
+                SetCell(world, left, shellLeftover, false);
+                SetCell(world, right, shellLeftover, false);
 
                 // 重建墙体与端口（PlaceBuilding 直接实例化，不走盖章回调）
                 int rootCell = Grid.XYToCell(left, 0);
