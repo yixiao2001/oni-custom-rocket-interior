@@ -64,9 +64,11 @@ namespace CustomRocketInterior.Patches
                     return;
                 }
 
-                // 1) 收集旧顶部建筑（墙砖 + 端口），记录端口类型与列位置
+                // 1) 收集旧顶部建筑（墙砖 + 端口）。若两行上有任何"非墙砖/端口"的
+                //    玩家建筑、管道或电线，则跳过修复（避免把东西埋进新墙里）。
                 var ports = new List<(string id, int worldX)>();
                 var toDestroy = new List<Building>();
+                var foreign = new List<string>();
                 foreach (Building b in Components.BuildingCompletes.Items)
                 {
                     if (b == null || b.GetMyWorldId() != world.id)
@@ -82,6 +84,7 @@ namespace CustomRocketInterior.Patches
                     if (id != WallTileId && id != LiquidInputPortId && id != LiquidOutputPortId
                         && id != GasInputPortId && id != GasOutputPortId)
                     {
+                        foreign.Add(id);
                         continue;
                     }
                     if (id != WallTileId)
@@ -89,6 +92,38 @@ namespace CustomRocketInterior.Patches
                         ports.Add((id, Grid.CellColumn(b.NaturalBuildingCell())));
                     }
                     toDestroy.Add(b);
+                }
+                if (foreign.Count > 0)
+                {
+                    Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
+                        $"top rows contain player buildings ({string.Join(", ", foreign)}). " +
+                        $"Remove anything on the top two rows, save and re-load to repair.");
+                    return;
+                }
+                // 管道/电线等非建筑对象同样会阻止修复
+                var layers = new[] { ObjectLayer.GasConduit, ObjectLayer.LiquidConduit,
+                    ObjectLayer.SolidConduit, ObjectLayer.Wire, ObjectLayer.LogicWire };
+                var blocked = new List<string>();
+                for (int r = newRow; r <= oldRow; r++)
+                {
+                    for (int x = left; x <= right; x++)
+                    {
+                        int c = Grid.XYToCell(x, r);
+                        foreach (ObjectLayer layer in layers)
+                        {
+                            if (Grid.Objects[c, (int)layer] != null)
+                            {
+                                blocked.Add(layer.ToString());
+                            }
+                        }
+                    }
+                }
+                if (blocked.Count > 0)
+                {
+                    Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
+                        $"top rows contain {string.Join(", ", blocked)}. " +
+                        $"Remove anything on the top two rows, save and re-load to repair.");
+                    return;
                 }
 
                 // 2) 构建“增量模板”：旧行清真空 + 新行铺墙，仅含顶部两行
