@@ -24,7 +24,7 @@ namespace CustomRocketInterior
             // 扩大火箭内部世界。游戏源码中这是 public static 可变字段（默认 32×32），
             // ClusterManager.CreateRocketInteriorWorld 与 BestFit.CountRocketInteriors
             // 都在运行时读取它，直接赋值即可全局生效，无需打补丁。
-                TUNING.ROCKETRY.ROCKET_INTERIOR_SIZE = InteriorSizeConfig.WorldSize;
+            TUNING.ROCKETRY.ROCKET_INTERIOR_SIZE = InteriorSizeConfig.WorldSize;
 
             // 注册选项界面：主菜单 -> 模组 -> 本 mod -> 设置
             new PLibOptions().RegisterOptions(this, typeof(RocketInteriorOptions));

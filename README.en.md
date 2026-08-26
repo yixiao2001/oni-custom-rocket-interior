@@ -35,7 +35,7 @@ Main Menu → Mods → Custom Rocket Interior → **Options**:
 | Option | Range | Default | Description |
 |---|---|---|---|
 | Interior width | 12–96 tiles | 40 | Width of the rocket interior world |
-| Interior height | 12–96 tiles | 40 | World height = value + 1 (2 safe rows at top); usable height = value − 4 |
+| Interior height | 12–96 tiles | 40 | Height of the interior world |
 | Wall material | Steel / Igneous Rock / Neutronium / Glass | Steel | Material of wall tiles + backing cells |
 
 - Options are re-read every time a new rocket interior is created — new rockets use them immediately;
