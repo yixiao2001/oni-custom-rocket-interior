@@ -100,11 +100,9 @@ namespace CustomRocketInterior.Core
             newWidth = Math.Max(newWidth, MinSizeClamp);
             newHeight = Math.Max(newHeight, MinSizeClamp);
 
-            // 以原点为中心的新包围盒（模板印在世界中心，居中才能贴合世界边缘）。
-            // 奇数高度时 -(H/2) 会向下偏一格，故用 -( (H+1)/2 ) 让房间底边对齐
-            // 底部 1 格边距、顶部多出 1 格边距（顶墙抵达 H-3）。
-            int nxmin = -((newWidth + 1) / 2);
-            int nymin = -((newHeight + 1) / 2);
+            // 以原点为中心的新包围盒（模板印在世界中心，居中才能贴合世界边缘）
+            int nxmin = -(newWidth / 2);
+            int nymin = -(newHeight / 2);
             int nxmax = nxmin + newWidth - 1;
             int nymax = nymin + newHeight - 1;
 
