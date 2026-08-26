@@ -167,31 +167,44 @@ namespace CustomRocketInterior.Patches
                 SetCell(world, left, topOld, false);
                 SetCell(world, right, topOld, false);
 
-                // 重建墙与端口（同步 API）
-                int rootCell = Grid.XYToCell(left, off.y);
-                var portXs = new HashSet<int>();
-                foreach ((string id, int wx) in ports)
-                {
-                    portXs.Add(wx);
-                }
-                for (int x = left; x <= right; x++)
-                {
-                    if (!portXs.Contains(x))
+                // 重建墙与端口——延迟 0.5 秒执行：Unity 的 Destroy 在帧末才真正移除对象，
+                // 立刻生成新端口会与“还没死透”的旧端口争夺 utility network 端点
+                // （上次日志中的 endpoint stomp 警告，随后的退出崩溃疑与此有关）。
+                GameScheduler.Instance.Schedule("CustomRocketInterior.RepairSpawn", 0.5f,
+                    delegate
                     {
-                        SpawnWall(world, x, topNew);
-                    }
-                }
-                foreach ((string id, int wx) in ports)
-                {
-                    TemplateLoader.PlaceBuilding(new Prefab
-                    {
-                        id = id,
-                        location_x = wx - left,
-                        location_y = topNew - off.y,
-                        element = SimHashes.Steel,
-                        temperature = 293.15f,
-                    }, rootCell);
-                }
+                        try
+                        {
+                            int rootCell = Grid.XYToCell(left, off.y);
+                            var portXs = new HashSet<int>();
+                            foreach ((string id, int wx) in ports)
+                            {
+                                portXs.Add(wx);
+                            }
+                            for (int x = left; x <= right; x++)
+                            {
+                                if (!portXs.Contains(x))
+                                {
+                                    SpawnWall(world, x, topNew);
+                                }
+                            }
+                            foreach ((string id, int wx) in ports)
+                            {
+                                TemplateLoader.PlaceBuilding(new Prefab
+                                {
+                                    id = id,
+                                    location_x = wx - left,
+                                    location_y = topNew - off.y,
+                                    element = SimHashes.Steel,
+                                    temperature = 293.15f,
+                                }, rootCell);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[CustomRocketInterior] Repair spawn failed: {e}");
+                        }
+                    });
 
                 Debug.Log($"[CustomRocketInterior] Repaired old interior layout of world {world.id}: " +
                           $"top wall moved {topOld}->{topNew} ({ports.Count} ports re-placed).");
