@@ -30,14 +30,45 @@ namespace CustomRocketInterior.Patches
 
         private static void Postfix(ClustercraftExteriorDoor __instance)
         {
+            // 重要：绝不能在这里直接盖章——存档加载期间模拟系统尚未就绪，
+            // 异步回调句柄会与游戏自身的 cell 更新冲突（CallbackInfo 版本错配 → NRE）。
+            // 改为在世界加载完成、模拟跑起来之后（延迟 2 秒）再执行修复。
             try
             {
-                // 新建模块 targetWorldId == -1（刚走完创建流程，已是新布局），跳过
                 if (TargetWorldIdField == null || (int)TargetWorldIdField.GetValue(__instance) < 0)
                 {
                     return;
                 }
+                RocketModuleCluster module = __instance.GetComponent<RocketModuleCluster>();
+                if (module == null || module.CraftInterface == null)
+                {
+                    return;
+                }
+                WorldContainer world = module.CraftInterface.gameObject.GetComponent<WorldContainer>();
+                if (world == null)
+                {
+                    return;
+                }
+                string templateName = __instance.interiorTemplateName;
+                ClustercraftExteriorDoor captured = __instance;
+                GameScheduler.Instance.Schedule("CustomRocketInterior.Repair", 2f,
+                    delegate { Run(captured, templateName); });
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[CustomRocketInterior] Interior repair scheduling failed: {e}");
+            }
+        }
 
+        private static void Run(ClustercraftExteriorDoor __instance, string templateName)
+        {
+            try
+            {
+                // Unity 销毁过的对象 == null（判空安全）
+                if (__instance == null)
+                {
+                    return;
+                }
                 RocketModuleCluster module = __instance.GetComponent<RocketModuleCluster>();
                 if (module == null || module.CraftInterface == null)
                 {
@@ -113,7 +144,7 @@ namespace CustomRocketInterior.Patches
                 delta.pickupables = new List<Prefab>();
                 delta.elementalOres = new List<Prefab>();
                 delta.otherEntities = new List<Prefab>();
-                delta.info = TemplateCache.GetTemplate(__instance.interiorTemplateName)?.info;
+                delta.info = TemplateCache.GetTemplate(templateName)?.info;
                 TemplateLoader.Stamp(delta, new Vector2(centerX, centerY), null);
 
                 Debug.Log($"[CustomRocketInterior] Repaired old interior layout of world {world.id}: " +
