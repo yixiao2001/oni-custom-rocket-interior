@@ -68,15 +68,13 @@ namespace CustomRocketInterior.Core
             Vector2I ws = InteriorSizeConfig.WorldSize;
             try
             {
-                // 四周各留 EdgeMargin 格空隙，避免墙体贴死世界边缘导致看不清。
-                // 高度额外 -1：原版舱体只占据 32x32 世界的中间区域，端口墙距世界顶部
-                // 有 10 行以上；而我们的房间铺满整个世界，顶墙一旦顶到世界顶部附近
-                // （H-2 行），该行就无法铺设液体管道/挂载液体端口的设备（引擎对世界
-                // 顶部附近行的液体管道建造限制）。
-                // 因此顶部额外多留 1 格：单层顶墙下移到 H-3，其余三边仍为 1 格。
+                // 四周各留 EdgeMargin 格空隙（顶部由 FillNewLayout 额外补一行壳层）。
+                // 顶部结构复刻原版 habitat_medium：端口墙(np ymax) + 其上方一行全宽壳层
+                // （贴世界顶边）。液体管道/端口挂在端口墙行（上方有实体格即可建造），
+                // 因此舱内可用高度与旧布局完全一致，一行也不损失。
                 Resize(template,
                     Math.Max(MinSizeClamp, ws.x - 2 * InteriorSizeConfig.EdgeMargin),
-                    Math.Max(MinSizeClamp, ws.y - 2 * InteriorSizeConfig.EdgeMargin - 1));
+                    Math.Max(MinSizeClamp, ws.y - 2 * InteriorSizeConfig.EdgeMargin));
             }
             catch (Exception e)
             {
@@ -112,7 +110,8 @@ namespace CustomRocketInterior.Core
             int nymax = nymin + newHeight - 1;
 
             // 幂等保护：已是目标居中尺寸则跳过（模板是进程级缓存单例，会被反复获取）。
-            if (xmin == nxmin && xmax == nxmax && ymin == nymin && ymax == nymax)
+            // 注意顶壳层在 nymax+1，因此期望 ymax 为 nymax+1。
+            if (xmin == nxmin && xmax == nxmax && ymin == nymin && ymax == nymax + 1)
             {
                 return false;
             }
@@ -308,6 +307,31 @@ namespace CustomRocketInterior.Core
                         newCells.Add(cell);
                         cellAt[k] = cell;
                     }
+                }
+            }
+
+            // 顶壳层：端口行(nymax)上方补一整行同材料墙体，贴世界顶边（复刻原版
+            // habitat_medium 顶部 y=6 壳层 + y=5 端口墙的两行结构）。液体管道要求
+            // 端口行的上方有实体格，否则整行无法铺设管道/挂载液体端口类设备。
+            int shellRow = nymax + 1;
+            for (int x = xmin; x <= nxmax; x++)
+            {
+                long k = Key(x, shellRow);
+                if (cellAt.TryGetValue(k, out Cell existing))
+                {
+                    existing.element = wallElement;
+                    existing.mass = ShellMass;
+                    existing.temperature = ShellTemperature;
+                }
+                else
+                {
+                    var cell = ShellCell(x, shellRow);
+                    newCells.Add(cell);
+                    cellAt[k] = cell;
+                }
+                if (!occupied.Contains(k))
+                {
+                    newBuildings.Add(WallTile(x, shellRow));
                 }
             }
 

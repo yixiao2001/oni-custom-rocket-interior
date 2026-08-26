@@ -3,28 +3,27 @@ using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using TemplateClasses;
-using CustomRocketInterior.Config;
 using UnityEngine;
+using CustomRocketInterior.Config;
 
 namespace CustomRocketInterior.Patches
 {
     /// <summary>
-    /// 存档加载时的“外科手术”式原位修复：只动火箭内部世界的顶部两行，
-    /// 把旧布局（顶墙位于世界顶部第 2 行 H-2，液体管道/装配器无法建造）
-    /// 迁移到新布局（单层顶墙下移到 H-3，端口随迁，旧顶行清成真空）。
+    /// 存档加载时的原位修复（纯加法，零侵入）：
+    /// 旧布局的火箭内部（单层顶墙在世界顶部第 2 行 H-2）因为端口行上方没有实体格，
+    /// 整行无法铺设液体管道/挂载液体端口。修复 = 只在原本空着的顶部边距行 H-1
+    /// （世界顶边行）补一整行同材料墙（壳层），端口墙行与舱内内容全部不动：
+    ///   H-1  壳层墙（新增，贴世界顶边）
+    ///   H-2  端口墙（不动，管道从此可铺）
+    /// 舱内可用高度与旧布局完全一致，一行也不损失。
     ///
-    /// 舱内其余内容（管道、装修、建筑、门与配对关系）全部不动。
-    /// 触发：从存档加载的模块（targetWorldId >= 0）且 H-2 行仍有墙。
-    /// 幂等：修复后 H-2 行为真空，下次加载自动跳过。
+    /// 触发：从存档加载的模块（targetWorldId >= 0），H-2 行有墙且 H-1 行无墙。
+    /// 幂等：修复后 H-1 行为墙，下次加载自动跳过。
     /// </summary>
     [HarmonyPatch(typeof(ClustercraftExteriorDoor), "OnSpawn")]
     internal static class RepairInteriorPatch
     {
         private const string WallTileId = "RocketWallTile";
-        private const string LiquidInputPortId = "RocketInteriorLiquidInputPort";
-        private const string LiquidOutputPortId = "RocketInteriorLiquidOutputPort";
-        private const string GasInputPortId = "RocketInteriorGasInputPort";
-        private const string GasOutputPortId = "RocketInteriorGasOutputPort";
 
         private static readonly FieldInfo TargetWorldIdField =
             typeof(ClustercraftExteriorDoor).GetField("targetWorldId", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -33,7 +32,7 @@ namespace CustomRocketInterior.Patches
         {
             try
             {
-                // 新建模块 targetWorldId == -1（刚刚走完创建流程，已是新布局），跳过
+                // 新建模块 targetWorldId == -1（刚走完创建流程，已是新布局），跳过
                 if (TargetWorldIdField == null || (int)TargetWorldIdField.GetValue(__instance) < 0)
                 {
                     return;
@@ -52,81 +51,43 @@ namespace CustomRocketInterior.Patches
 
                 Vector2I off = world.WorldOffset;
                 Vector2I size = world.WorldSize;
-                int oldRow = off.y + size.y - 2;   // 旧顶墙行（世界顶部第 2 行）
-                int newRow = off.y + size.y - 3;   // 新顶墙行（世界顶部第 3 行）
+                int portRow = off.y + size.y - 2;   // 端口墙行 H-2（旧布局顶墙行）
+                int shellRow = off.y + size.y - 1;  // 壳层行 H-1（世界顶边）
                 int left = off.x + 1;
                 int right = off.x + size.x - 2;
 
-                int probe = Grid.XYToCell(off.x + size.x / 2, oldRow);
-                if (!Grid.IsValidCell(probe) || Grid.Element[probe].id == SimHashes.Vacuum)
+                int probePort = Grid.XYToCell(off.x + size.x / 2, portRow);
+                int probeShell = Grid.XYToCell(off.x + size.x / 2, shellRow);
+                if (!Grid.IsValidCell(probePort) || !Grid.IsValidCell(probeShell))
                 {
-                    // H-2 行无墙：已是新布局（或从未被本 mod 改造过），无需修复
+                    return;
+                }
+                // H-2 无墙 = 无需修复（已是新布局/原版小模板）；H-1 已有墙 = 已修复过
+                if (Grid.Element[probePort].id == SimHashes.Vacuum
+                    || Grid.Element[probeShell].id != SimHashes.Vacuum)
+                {
                     return;
                 }
 
-                // 1) 收集旧顶部建筑（墙砖 + 端口）。若两行上有任何"非墙砖/端口"的
-                //    玩家建筑、管道或电线，则跳过修复（避免把东西埋进新墙里）。
-                var ports = new List<(string id, int worldX)>();
-                var toDestroy = new List<Building>();
-                var foreign = new List<string>();
-                foreach (Building b in Components.BuildingCompletes.Items)
+                // 壳层行原本是空顶边距，通常没有对象；万一有玩家东西则跳过以免误伤
+                var layers = new[] { ObjectLayer.Building, ObjectLayer.GasConduit,
+                    ObjectLayer.LiquidConduit, ObjectLayer.SolidConduit,
+                    ObjectLayer.Wire, ObjectLayer.LogicWire };
+                for (int x = left; x <= right; x++)
                 {
-                    if (b == null || b.GetMyWorldId() != world.id)
+                    int c = Grid.XYToCell(x, shellRow);
+                    foreach (ObjectLayer layer in layers)
                     {
-                        continue;
-                    }
-                    int row = Grid.CellRow(b.NaturalBuildingCell());
-                    if (row != oldRow && row != newRow)
-                    {
-                        continue;
-                    }
-                    string id = b.GetComponent<KPrefabID>()?.PrefabID().Name;
-                    if (id != WallTileId && id != LiquidInputPortId && id != LiquidOutputPortId
-                        && id != GasInputPortId && id != GasOutputPortId)
-                    {
-                        foreign.Add(id);
-                        continue;
-                    }
-                    if (id != WallTileId)
-                    {
-                        ports.Add((id, Grid.CellColumn(b.NaturalBuildingCell())));
-                    }
-                    toDestroy.Add(b);
-                }
-                if (foreign.Count > 0)
-                {
-                    Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
-                        $"top rows contain player buildings ({string.Join(", ", foreign)}). " +
-                        $"Remove anything on the top two rows, save and re-load to repair.");
-                    return;
-                }
-                // 管道/电线等非建筑对象同样会阻止修复
-                var layers = new[] { ObjectLayer.GasConduit, ObjectLayer.LiquidConduit,
-                    ObjectLayer.SolidConduit, ObjectLayer.Wire, ObjectLayer.LogicWire };
-                var blocked = new List<string>();
-                for (int r = newRow; r <= oldRow; r++)
-                {
-                    for (int x = left; x <= right; x++)
-                    {
-                        int c = Grid.XYToCell(x, r);
-                        foreach (ObjectLayer layer in layers)
+                        if (Grid.Objects[c, (int)layer] != null)
                         {
-                            if (Grid.Objects[c, (int)layer] != null)
-                            {
-                                blocked.Add(layer.ToString());
-                            }
+                            Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
+                                $"empty border row {shellRow} contains objects. Remove them, save and re-load.");
+                            return;
                         }
                     }
                 }
-                if (blocked.Count > 0)
-                {
-                    Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
-                        $"top rows contain {string.Join(", ", blocked)}. " +
-                        $"Remove anything on the top two rows, save and re-load to repair.");
-                    return;
-                }
 
-                // 2) 构建“增量模板”：旧行清真空 + 新行铺墙，仅含顶部两行
+                // 构建增量模板：只补壳层行（全宽墙）
                 var cells = new List<Cell>();
                 var buildings = new List<Prefab>();
                 int centerX = off.x + size.x / 2;
@@ -134,50 +95,16 @@ namespace CustomRocketInterior.Patches
                 for (int x = left; x <= right; x++)
                 {
                     cells.Add(new Cell(
-                        x - centerX, oldRow - centerY,
-                        SimHashes.Vacuum, 293.15f, 0f, null, 0));
-                    cells.Add(new Cell(
-                        x - centerX, newRow - centerY,
+                        x - centerX, shellRow - centerY,
                         InteriorSizeConfig.WallElement, 293.15f, 100f, null, 0));
-                }
-                var portXs = new HashSet<int>();
-                foreach ((string id, int wx) in ports)
-                {
-                    portXs.Add(wx);
-                }
-                for (int x = left; x <= right; x++)
-                {
-                    if (!portXs.Contains(x))
-                    {
-                        buildings.Add(new Prefab
-                        {
-                            id = WallTileId,
-                            location_x = x - centerX,
-                            location_y = newRow - centerY,
-                            element = InteriorSizeConfig.WallElement,
-                            temperature = 293.15f,
-                        });
-                    }
-                }
-                foreach ((string id, int wx) in ports)
-                {
                     buildings.Add(new Prefab
                     {
-                        id = id,
-                        location_x = wx - centerX,
-                        location_y = newRow - centerY,
-                        element = SimHashes.Steel,
+                        id = WallTileId,
+                        location_x = x - centerX,
+                        location_y = shellRow - centerY,
+                        element = InteriorSizeConfig.WallElement,
                         temperature = 293.15f,
                     });
-                }
-
-                // 3) 删除旧顶部两行的建筑，然后用增量模板覆盖顶部两行格子和新建筑
-                foreach (Building b in toDestroy)
-                {
-                    if (b != null)
-                    {
-                        UnityEngine.Object.Destroy(b.gameObject);
-                    }
                 }
 
                 var delta = new TemplateContainer();
@@ -187,11 +114,10 @@ namespace CustomRocketInterior.Patches
                 delta.elementalOres = new List<Prefab>();
                 delta.otherEntities = new List<Prefab>();
                 delta.info = TemplateCache.GetTemplate(__instance.interiorTemplateName)?.info;
-                TemplateLoader.Stamp(delta,
-                    new Vector2(centerX, centerY), null);
+                TemplateLoader.Stamp(delta, new Vector2(centerX, centerY), null);
 
                 Debug.Log($"[CustomRocketInterior] Repaired old interior layout of world {world.id}: " +
-                          $"top wall moved from H-2 to H-3 ({ports.Count} ports re-placed).");
+                          $"shell row added at H-1 above the port wall (interior size preserved).");
             }
             catch (Exception e)
             {
