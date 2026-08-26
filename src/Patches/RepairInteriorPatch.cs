@@ -9,48 +9,41 @@ using CustomRocketInterior.Config;
 namespace CustomRocketInterior.Patches
 {
     /// <summary>
-    /// 存档加载时的原位修复（纯加法，零侵入）：
-    /// 旧布局的火箭内部（单层顶墙在世界顶部第 2 行 H-2）因为端口行上方没有实体格，
-    /// 整行无法铺设液体管道/挂载液体端口。修复 = 只在原本空着的顶部边距行 H-1
-    /// （世界顶边行）补一整行同材料墙（壳层），端口墙行与舱内内容全部不动：
-    ///   H-1  壳层墙（新增，贴世界顶边）
-    ///   H-2  端口墙（不动，管道从此可铺）
-    /// 舱内可用高度与旧布局完全一致，一行也不损失。
-    ///
-    /// 触发：从存档加载的模块（targetWorldId >= 0），H-2 行有墙且 H-1 行无墙。
-    /// 幂等：修复后 H-1 行为墙，下次加载自动跳过。
+    /// 存档加载时的原位修复（移墙保尺寸）：
+    /// 引擎规则：世界顶部 2 行禁止铺设液体管道/挂载液体端口（实测：即使端口行
+    /// 上方有实体格也照样被禁）。老存档的世界高度在创建时固化（无法抬高），
+    /// 因此把墙体整体下移一行：顶墙 H-2 → H-3，底墙 1 → 0（贴世界底边），
+    /// 端口随各自墙线移动（液体端口 H-2 → H-3，气体端口 1 → 0）。
+    /// 内部可用高度（旧 2..H-3 行 = H-4 行）保持与旧布局完全相同：
+    ///   旧: [0空] [1底墙] [2..37内部36行] [38顶墙] [39空]
+    ///   新: [0底墙] [1..36内部36行] [37顶墙] [38..39 空(顶部禁建区)]
+    /// 舱内其余内容（家具、装修、门、配对）一律不动；只有新顶墙压到的第 37 行
+    /// 有玩家东西时跳过修复（用户清空后可重试）。
+    /// 触发：从存档加载的模块（targetWorldId >= 0）且该世界 H-2 行仍有墙。
+    /// 幂等：修复后 H-2 行为真空，下次加载自动跳过。
     /// </summary>
     [HarmonyPatch(typeof(ClustercraftExteriorDoor), "OnSpawn")]
     internal static class RepairInteriorPatch
     {
         private const string WallTileId = "RocketWallTile";
+        private const string LiquidInputPortId = "RocketInteriorLiquidInputPort";
+        private const string LiquidOutputPortId = "RocketInteriorLiquidOutputPort";
+        private const string GasInputPortId = "RocketInteriorGasInputPort";
+        private const string GasOutputPortId = "RocketInteriorGasOutputPort";
 
         private static readonly FieldInfo TargetWorldIdField =
             typeof(ClustercraftExteriorDoor).GetField("targetWorldId", BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static void Postfix(ClustercraftExteriorDoor __instance)
         {
-            // 重要：绝不能在这里直接盖章——存档加载期间模拟系统尚未就绪，
-            // 异步回调句柄会与游戏自身的 cell 更新冲突（CallbackInfo 版本错配 → NRE）。
-            // 改为在世界加载完成、模拟跑起来之后（延迟 2 秒）再执行修复。
             try
             {
                 if (TargetWorldIdField == null || (int)TargetWorldIdField.GetValue(__instance) < 0)
                 {
                     return;
                 }
-                RocketModuleCluster module = __instance.GetComponent<RocketModuleCluster>();
-                if (module == null || module.CraftInterface == null)
-                {
-                    return;
-                }
-                WorldContainer world = module.CraftInterface.gameObject.GetComponent<WorldContainer>();
-                if (world == null)
-                {
-                    return;
-                }
-                string templateName = __instance.interiorTemplateName;
                 ClustercraftExteriorDoor captured = __instance;
+                string templateName = __instance.interiorTemplateName;
                 GameScheduler.Instance.Schedule("CustomRocketInterior.Repair", 2f,
                     delegate { Run(captured, templateName); });
             }
@@ -64,7 +57,6 @@ namespace CustomRocketInterior.Patches
         {
             try
             {
-                // Unity 销毁过的对象 == null（判空安全）
                 if (__instance == null)
                 {
                     return;
@@ -82,78 +74,217 @@ namespace CustomRocketInterior.Patches
 
                 Vector2I off = world.WorldOffset;
                 Vector2I size = world.WorldSize;
-                int portRow = off.y + size.y - 2;   // 端口墙行 H-2（旧布局顶墙行）
-                int shellRow = off.y + size.y - 1;  // 壳层行 H-1（世界顶边）
+                int topWallOld = off.y + size.y - 2;    // 需要检修的顶墙行（H-2）
+                int topWallNew = off.y + size.y - 3;    // 新顶墙行（H-3）
+                int bottomWallOld = off.y + 1;          // 旧底墙行
+                int bottomWallNew = off.y;              // 新底墙行（贴世界底边）
                 int left = off.x + 1;
                 int right = off.x + size.x - 2;
 
-                int probePort = Grid.XYToCell(off.x + size.x / 2, portRow);
-                int probeShell = Grid.XYToCell(off.x + size.x / 2, shellRow);
-                if (!Grid.IsValidCell(probePort) || !Grid.IsValidCell(probeShell))
+                int probe = Grid.XYToCell(off.x + size.x / 2, topWallOld);
+                if (!Grid.IsValidCell(probe) || Grid.Element[probe].id == SimHashes.Vacuum)
                 {
-                    return;
-                }
-                // H-2 无墙 = 无需修复（已是新布局/原版小模板）；H-1 已有墙 = 已修复过
-                if (Grid.Element[probePort].id == SimHashes.Vacuum
-                    || Grid.Element[probeShell].id != SimHashes.Vacuum)
-                {
-                    return;
+                    return; // H-2 无墙：新布局（世界已 +1）或从未被本 mod 改造过
                 }
 
-                // 壳层行原本是空顶边距，通常没有对象；万一有玩家东西则跳过以免误伤
+                // 检测这些行上是否有玩家内容，有则跳过（避免误伤/被新墙埋掉）
                 var layers = new[] { ObjectLayer.Building, ObjectLayer.GasConduit,
                     ObjectLayer.LiquidConduit, ObjectLayer.SolidConduit,
                     ObjectLayer.Wire, ObjectLayer.LogicWire };
-                for (int x = left; x <= right; x++)
+                var foreignBuildings = new List<string>();
+                foreach (Building b in Components.BuildingCompletes.Items)
                 {
-                    int c = Grid.XYToCell(x, shellRow);
-                    foreach (ObjectLayer layer in layers)
+                    if (b == null || b.GetMyWorldId() != world.id)
                     {
-                        if (Grid.Objects[c, (int)layer] != null)
+                        continue;
+                    }
+                    int row = Grid.CellRow(b.NaturalBuildingCell());
+                    if (row != topWallOld && row != topWallNew && row != bottomWallOld
+                        && row != bottomWallNew)
+                    {
+                        continue;
+                    }
+                    string id = b.GetComponent<KPrefabID>()?.PrefabID().Name;
+                    if (id != WallTileId && id != LiquidInputPortId && id != LiquidOutputPortId
+                        && id != GasInputPortId && id != GasOutputPortId)
+                    {
+                        foreignBuildings.Add($"{id}@{row}");
+                    }
+                }
+                if (foreignBuildings.Count > 0)
+                {
+                    Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
+                        $"rows {topWallNew}..{topWallOld}/{bottomWallNew}..{bottomWallOld} contain player buildings " +
+                        $"({string.Join(", ", foreignBuildings)}). Remove them, save and re-load.");
+                    return;
+                }
+                for (int r = bottomWallNew; r <= bottomWallOld; r++)
+                {
+                    for (int x = left; x <= right; x++)
+                    {
+                        int c = Grid.XYToCell(x, r);
+                        foreach (ObjectLayer layer in layers)
                         {
-                            Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
-                                $"empty border row {shellRow} contains objects. Remove them, save and re-load.");
-                            return;
+                            if (Grid.Objects[c, (int)layer] != null)
+                            {
+                                Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
+                                    $"bottom rows contain {layer}. Remove them, save and re-load.");
+                                return;
+                            }
+                        }
+                    }
+                }
+                for (int r = topWallNew; r <= topWallOld; r++)
+                {
+                    for (int x = left; x <= right; x++)
+                    {
+                        int c = Grid.XYToCell(x, r);
+                        foreach (ObjectLayer layer in layers)
+                        {
+                            if (Grid.Objects[c, (int)layer] != null)
+                            {
+                                Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
+                                    $"top rows contain {layer}. Remove them, save and re-load.");
+                                return;
+                            }
                         }
                     }
                 }
 
-                // 构建增量模板：只补壳层行（全宽墙）
-                var cells = new List<Cell>();
-                var buildings = new List<Prefab>();
-                int centerX = off.x + size.x / 2;
-                int centerY = off.y + size.y / 2;
-                for (int x = left; x <= right; x++)
+                // 收集端口（趁还没被删），并标记旧墙体建筑
+                var ports = new List<(string id, int worldX)>();
+                var toDestroy = new List<Building>();
+                foreach (Building b in Components.BuildingCompletes.Items)
                 {
-                    cells.Add(new Cell(
-                        x - centerX, shellRow - centerY,
-                        InteriorSizeConfig.WallElement, 293.15f, 100f, null, 0));
-                    buildings.Add(new Prefab
+                    if (b == null || b.GetMyWorldId() != world.id)
                     {
-                        id = WallTileId,
-                        location_x = x - centerX,
-                        location_y = shellRow - centerY,
-                        element = InteriorSizeConfig.WallElement,
-                        temperature = 293.15f,
-                    });
+                        continue;
+                    }
+                    int row = Grid.CellRow(b.NaturalBuildingCell());
+                    if (row != topWallOld && row != bottomWallOld)
+                    {
+                        continue;
+                    }
+                    string id = b.GetComponent<KPrefabID>()?.PrefabID().Name;
+                    if (id != WallTileId && id != LiquidInputPortId && id != LiquidOutputPortId
+                        && id != GasInputPortId && id != GasOutputPortId)
+                    {
+                        continue;
+                    }
+                    if (id != WallTileId)
+                    {
+                        ports.Add((id, Grid.CellColumn(b.NaturalBuildingCell())));
+                    }
+                    toDestroy.Add(b);
                 }
 
-                var delta = new TemplateContainer();
-                delta.cells = cells;
-                delta.buildings = buildings;
-                delta.pickupables = new List<Prefab>();
-                delta.elementalOres = new List<Prefab>();
-                delta.otherEntities = new List<Prefab>();
-                delta.info = TemplateCache.GetTemplate(templateName)?.info;
-                TemplateLoader.Stamp(delta, new Vector2(centerX, centerY), null);
+                // 删旧墙/旧端口
+                foreach (Building b in toDestroy)
+                {
+                    if (b != null)
+                    {
+                        UnityEngine.Object.Destroy(b.gameObject);
+                    }
+                }
+
+                // 格子整备（同步 API，无回调冲突）
+                SetRow(world, left, right, off.y, topWallNew, true);     // 新顶墙行 → 墙
+                SetRow(world, left, right, off.y, topWallOld, false);    // 旧顶墙行 → 真空
+                SetRow(world, left, right, off.y, bottomWallOld, false); // 旧底墙行 → 真空(内部)
+                SetRow(world, left, right, off.y, bottomWallNew, true);  // 新底墙行 → 墙
+                // 左右侧墙补齐/收尾（底墙下移、顶墙上移）
+                for (int r = bottomWallNew; r <= topWallNew; r++)
+                {
+                    SetCell(world, left, r, true);
+                    SetCell(world, right, r, true);
+                }
+                SetCell(world, left, topWallOld, false);
+                SetCell(world, right, topWallOld, false);
+
+                // 重建墙体与端口（PlaceBuilding 直接实例化，不走盖章回调）
+                int rootCell = Grid.XYToCell(left, 0);
+                int centerY = off.y + size.y / 2;
+                var portXs = new HashSet<int>();
+                foreach ((string id, int wx) in ports)
+                {
+                    portXs.Add(wx);
+                }
+                for (int x = left; x <= right; x++)
+                {
+                    if (!portXs.Contains(x))
+                    {
+                        SpawnWall(world, x, topWallNew);
+                        SpawnWall(world, x, bottomWallNew);
+                    }
+                }
+                foreach ((string id, int wx) in ports)
+                {
+                    bool isLiquid = id == LiquidInputPortId || id == LiquidOutputPortId;
+                    int targetRow = isLiquid ? topWallNew : bottomWallNew;
+                    TemplateLoader.PlaceBuilding(new Prefab
+                    {
+                        id = id,
+                        location_x = wx - left,
+                        location_y = targetRow - off.y,
+                        element = SimHashes.Steel,
+                        temperature = 293.15f,
+                    }, Grid.XYToCell(left, off.y));
+                }
 
                 Debug.Log($"[CustomRocketInterior] Repaired old interior layout of world {world.id}: " +
-                          $"shell row added at H-1 above the port wall (interior size preserved).");
+                          $"walls moved down one row (top {topWallOld}->{topWallNew}, bottom {bottomWallOld}->{bottomWallNew}), " +
+                          $"{ports.Count} ports re-placed, interior height preserved.");
             }
             catch (Exception e)
             {
-                // 修复失败绝不能让游戏崩溃
                 Debug.LogError($"[CustomRocketInterior] Interior repair failed: {e}");
+            }
+        }
+
+        private static void SetRow(WorldContainer world, int left, int right, int offY, int row, bool solid)
+        {
+            for (int x = left; x <= right; x++)
+            {
+                SetCell(world, x, row, solid);
+            }
+        }
+
+        private static void SetCell(WorldContainer world, int x, int row, bool solid)
+        {
+            SimHashes element = solid ? InteriorSizeConfig.WallElement : SimHashes.Vacuum;
+            Element e = ElementLoader.FindElementByHash(element);
+            if (e == null)
+            {
+                Debug.LogError($"[CustomRocketInterior] Element {element} not found for repair.");
+                return;
+            }
+            GameObject go = null;
+            if (solid)
+            {
+                // 与墙同层，物理上已由 ModifyCell 提供；这里顺便清理可能残留的对象
+                go = Grid.Objects[Grid.XYToCell(x, row), (int)ObjectLayer.Building];
+            }
+            SimMessages.ModifyCell(Grid.XYToCell(x, row), e.idx, 293.15f,
+                solid ? 100f : 0f, (byte)0, 0);
+            if (solid && go != null && go.GetComponent<KPrefabID>()?.PrefabID().Name != WallTileId)
+            {
+                UnityEngine.Object.Destroy(go);
+            }
+        }
+
+        private static void SpawnWall(WorldContainer world, int x, int row)
+        {
+            GameObject go = TemplateLoader.PlaceBuilding(new Prefab
+            {
+                id = WallTileId,
+                location_x = x - (world.WorldOffset.x + 1),
+                location_y = row - world.WorldOffset.y,
+                element = InteriorSizeConfig.WallElement,
+                temperature = 293.15f,
+            }, Grid.XYToCell(world.WorldOffset.x + 1, world.WorldOffset.y));
+            if (go == null)
+            {
+                Debug.LogWarning($"[CustomRocketInterior] Failed to spawn wall at {x},{row}.");
             }
         }
     }
