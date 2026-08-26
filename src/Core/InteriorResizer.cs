@@ -68,10 +68,9 @@ namespace CustomRocketInterior.Core
             Vector2I ws = InteriorSizeConfig.WorldSize;
             try
             {
-                // 四周各留 EdgeMargin 格空隙（顶部由 FillNewLayout 额外补一行壳层）。
-                // 顶部结构复刻原版 habitat_medium：端口墙(np ymax) + 其上方一行全宽壳层
-                // （贴世界顶边）。液体管道/端口挂在端口墙行（上方有实体格即可建造），
-                // 因此舱内可用高度与旧布局完全一致，一行也不损失。
+                // 四周各留 EdgeMargin 格空隙。世界高度在赋值 ROCKET_INTERIOR_SIZE 时
+                // 已额外 +1（顶部留 2 行安全边距：世界顶边附近的行不能铺设液体管道），
+                // 房间仍按设置值生成，舱内可用高度与旧版一致。
                 Resize(template,
                     Math.Max(MinSizeClamp, ws.x - 2 * InteriorSizeConfig.EdgeMargin),
                     Math.Max(MinSizeClamp, ws.y - 2 * InteriorSizeConfig.EdgeMargin));
@@ -110,8 +109,7 @@ namespace CustomRocketInterior.Core
             int nymax = nymin + newHeight - 1;
 
             // 幂等保护：已是目标居中尺寸则跳过（模板是进程级缓存单例，会被反复获取）。
-            // 注意顶壳层在 nymax+1，因此期望 ymax 为 nymax+1。
-            if (xmin == nxmin && xmax == nxmax && ymin == nymin && ymax == nymax + 1)
+            if (xmin == nxmin && xmax == nxmax && ymin == nymin && ymax == nymax)
             {
                 return false;
             }
@@ -307,31 +305,6 @@ namespace CustomRocketInterior.Core
                         newCells.Add(cell);
                         cellAt[k] = cell;
                     }
-                }
-            }
-
-            // 顶壳层：端口行(nymax)上方补一整行同材料墙体，贴世界顶边（复刻原版
-            // habitat_medium 顶部 y=6 壳层 + y=5 端口墙的两行结构）。液体管道要求
-            // 端口行的上方有实体格，否则整行无法铺设管道/挂载液体端口类设备。
-            int shellRow = nymax + 1;
-            for (int x = xmin; x <= nxmax; x++)
-            {
-                long k = Key(x, shellRow);
-                if (cellAt.TryGetValue(k, out Cell existing))
-                {
-                    existing.element = wallElement;
-                    existing.mass = ShellMass;
-                    existing.temperature = ShellTemperature;
-                }
-                else
-                {
-                    var cell = ShellCell(x, shellRow);
-                    newCells.Add(cell);
-                    cellAt[k] = cell;
-                }
-                if (!occupied.Contains(k))
-                {
-                    newBuildings.Add(WallTile(x, shellRow));
                 }
             }
 
