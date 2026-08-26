@@ -24,7 +24,7 @@ namespace CustomRocketInterior.Options
         [Limit(12, 96)]
         public int WorldWidth { get; set; } = 40;
 
-        [Option("舱室高度", "火箭内部世界的高度（格）。原版太空员舱为 11；顶部需双层墙（外壳+端口墙）才能铺设液体管道，实际可用高度 = 设置值 - 3。", "大小")]
+        [Option("舱室高度", "火箭内部世界的高度（格）。原版太空员舱为 11；顶部需双层墙（外壳+端口墙）才能铺设液体管道，顶部因管道规则多留 1 格空隙，实际可用高度 = 设置值 - 3。", "大小")]
         [Limit(12, 96)]
         public int WorldHeight { get; set; } = 40;
 
