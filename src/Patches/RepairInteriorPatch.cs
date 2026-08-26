@@ -28,11 +28,18 @@ namespace CustomRocketInterior.Patches
         private const string GasInputPortId = "RocketInteriorGasInputPort";
         private const string GasOutputPortId = "RocketInteriorGasOutputPort";
 
+        // 对照实验开关：true=执行旧舱修复；false=完全跳过（用于排查崩溃来源）
+        private static readonly bool Enabled = false;
+
         private static readonly FieldInfo TargetWorldIdField =
             typeof(ClustercraftExteriorDoor).GetField("targetWorldId", BindingFlags.Instance | BindingFlags.NonPublic);
 
         private static void Postfix(ClustercraftExteriorDoor __instance)
         {
+            if (!Enabled)
+            {
+                return;
+            }
             try
             {
                 if (TargetWorldIdField == null || (int)TargetWorldIdField.GetValue(__instance) < 0)
