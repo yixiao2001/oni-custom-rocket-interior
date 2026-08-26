@@ -100,8 +100,8 @@ namespace CustomRocketInterior.Patches
                         continue;
                     }
                     int row = Grid.CellRow(b.NaturalBuildingCell());
-                    if (row != topWallOld && row != topWallNew && row != bottomWallOld
-                        && row != bottomWallNew && row != shellLeftover)
+                    if (row != topWallOld && row != topWallNew && row != bottomWallNew
+                        && row != shellLeftover)
                     {
                         continue;
                     }
@@ -115,11 +115,13 @@ namespace CustomRocketInterior.Patches
                 if (foreignBuildings.Count > 0)
                 {
                     Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
-                        $"rows {topWallNew}..{topWallOld}/{bottomWallNew}..{bottomWallOld} contain player buildings " +
+                        $"rows {topWallNew}..{shellLeftover} (and new bottom wall row) contain player buildings " +
                         $"({string.Join(", ", foreignBuildings)}). Remove them, save and re-load.");
                     return;
                 }
-                for (int r = bottomWallNew; r <= bottomWallOld; r++)
+                // 新底墙行(旧空边距行)一般无对象, 但保险起见仍检查; 旧底墙行(1)
+                // 修复后变成内部行, 其上的管道/电线不受影响, 不列入冲突.
+                for (int r = bottomWallNew; r <= bottomWallNew; r++)
                 {
                     for (int x = left; x <= right; x++)
                     {
