@@ -68,10 +68,14 @@ namespace CustomRocketInterior.Core
             Vector2I ws = InteriorSizeConfig.WorldSize;
             try
             {
-                // 四周各留 EdgeMargin 格空隙，避免墙体贴死世界边缘导致看不清
+                // 四周各留 EdgeMargin 格空隙，避免墙体贴死世界边缘导致看不清。
+                // 高度额外 -1：原版舱顶是双层全宽墙（外壳 + 端口墙，见 habitat_medium.yaml
+                // 顶部分别为 y=6 / y=5 两行 Steel），液体端口挂在下面一层。
+                // 单层顶墙上方是空置边距格，游戏不允许在该行铺设液体管道/液体端口类设备，
+                // 因此房间高度让出一行给"顶壳层"，端口行上方保持有实体格。
                 Resize(template,
                     Math.Max(MinSizeClamp, ws.x - 2 * InteriorSizeConfig.EdgeMargin),
-                    Math.Max(MinSizeClamp, ws.y - 2 * InteriorSizeConfig.EdgeMargin));
+                    Math.Max(MinSizeClamp, ws.y - 2 * InteriorSizeConfig.EdgeMargin - 1));
             }
             catch (Exception e)
             {
@@ -98,14 +102,17 @@ namespace CustomRocketInterior.Core
             newWidth = Math.Max(newWidth, MinSizeClamp);
             newHeight = Math.Max(newHeight, MinSizeClamp);
 
-            // 以原点为中心的新包围盒（模板印在世界中心，居中才能贴合世界边缘）
-            int nxmin = -(newWidth / 2);
-            int nymin = -(newHeight / 2);
+            // 以原点为中心的新包围盒（模板印在世界中心，居中才能贴合世界边缘）。
+            // 奇数高度时 -(H/2) 会向下偏一格，故用 -( (H+1)/2 ) 保证房间底部与
+            // 底边距一致（顶部分出的壳层行在 nymax+1 处）。
+            int nxmin = -((newWidth + 1) / 2);
+            int nymin = -((newHeight + 1) / 2);
             int nxmax = nxmin + newWidth - 1;
             int nymax = nymin + newHeight - 1;
 
-            // 幂等保护：已是目标居中尺寸则跳过（模板是进程级缓存单例，会被反复获取）
-            if (xmin == nxmin && xmax == nxmax && ymin == nymin && ymax == nymax)
+            // 幂等保护：已是目标居中尺寸则跳过（模板是进程级缓存单例，会被反复获取）。
+            // 注意顶壳层在 nymax+1，因此 ymax 与 nymax+1 比较。
+            if (xmin == nxmin && xmax == nxmax && ymin == nymin && ymax == nymax + 1)
             {
                 return false;
             }
@@ -301,6 +308,30 @@ namespace CustomRocketInterior.Core
                         newCells.Add(cell);
                         cellAt[k] = cell;
                     }
+                }
+            }
+
+            // 顶壳层：在端口行(nymax)上方补一整行同材料墙体（复刻原版顶部双层墙结构）。
+            // 没有这行实体格时，最顶层墙线无法铺设液体管道/挂载液体端口类设备。
+            int shellRow = nymax + 1;
+            for (int x = xmin; x <= nxmax; x++)
+            {
+                long k = Key(x, shellRow);
+                if (cellAt.TryGetValue(k, out Cell existing))
+                {
+                    existing.element = wallElement;
+                    existing.mass = ShellMass;
+                    existing.temperature = ShellTemperature;
+                }
+                else
+                {
+                    var cell = ShellCell(x, shellRow);
+                    newCells.Add(cell);
+                    cellAt[k] = cell;
+                }
+                if (!occupied.Contains(k))
+                {
+                    newBuildings.Add(WallTile(x, shellRow));
                 }
             }
 
