@@ -68,9 +68,9 @@ namespace CustomRocketInterior.Core
             Vector2I ws = InteriorSizeConfig.WorldSize;
             try
             {
-                // 四周各留 EdgeMargin 格空隙。世界高度在赋值 ROCKET_INTERIOR_SIZE 时
-                // 已额外 +1（顶部留 2 行安全边距：世界顶边附近的行不能铺设液体管道），
-                // 房间仍按设置值生成，舱内可用高度与旧版一致。
+                // 四周各留 EdgeMargin 格空隙。火箭内部世界的“顶部 2 行禁建”限制
+                // 已由 ValidBuildingCellPatch 解除（内部世界无陨石/太空层），
+                // 房间可安全铺满世界；端口/管道位于任何墙线都可建造。
                 Resize(template,
                     Math.Max(MinSizeClamp, ws.x - 2 * InteriorSizeConfig.EdgeMargin),
                     Math.Max(MinSizeClamp, ws.y - 2 * InteriorSizeConfig.EdgeMargin));

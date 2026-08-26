@@ -36,10 +36,7 @@ namespace CustomRocketInterior.Patches
                 }
 
                 InteriorSizeConfig.Apply(options);
-                // 世界高度 = 设置值 + 1：顶部留出 2 行安全边距（世界顶边附近的行不能建液体管道），
-// 舱内可用高度仍与旧版一致（设置值 - 4），一处空间都不损失；设置值 40 即世界 41 行。
-TUNING.ROCKETRY.ROCKET_INTERIOR_SIZE = new Vector2I(InteriorSizeConfig.WorldSize.x,
-    InteriorSizeConfig.WorldSize.y + 1);
+                TUNING.ROCKETRY.ROCKET_INTERIOR_SIZE = InteriorSizeConfig.WorldSize;
                 // 重置模板缓存让下一次 GetTemplate 拿到原生模板、按新配置重塑。
                 // 注意：Clear() 只是把字典置空（GetTemplate 不会自行初始化），
                 // 必须像游戏本体 DebugBaseTemplateButton 那样 Clear + Init 成对调用，
