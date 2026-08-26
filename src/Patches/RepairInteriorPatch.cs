@@ -17,8 +17,8 @@ namespace CustomRocketInterior.Patches
     /// 内部可用高度（旧 2..H-3 行 = H-4 行）保持与旧布局完全相同：
     ///   旧: [0空] [1底墙] [2..37内部36行] [38顶墙] [39空]
     ///   新: [0底墙] [1..36内部36行] [37顶墙] [38..39 空(顶部禁建区)]
-    /// 舱内其余内容（家具、装修、门、配对）一律不动；只有新顶墙压到的第 37 行
-    /// 有玩家东西时跳过修复（用户清空后可重试）。
+    /// 舱内其余内容（家具、装修、门、配对）一律不动；新顶墙压到/被清空的行
+    /// （37/38/39 与新底墙行 0）上的玩家建筑、管道、电线会在修复时直接拆除（材料不返还）。
     /// 触发：从存档加载的模块（targetWorldId >= 0）且该世界 H-2 行仍有墙。
     /// 幂等：修复后 H-2 行为真空，下次加载自动跳过。
     /// </summary>
@@ -112,12 +112,33 @@ namespace CustomRocketInterior.Patches
                         foreignBuildings.Add($"{id}@{row}");
                     }
                 }
+                // 冲突行(新/旧顶墙行、旧壳层行、新底墙行)上的玩家建筑一律在修复时拆除
+                // (材料不返还；这些行要么被墙化、要么被清空)。
                 if (foreignBuildings.Count > 0)
                 {
-                    Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
-                        $"rows {topWallNew}..{shellLeftover} (and new bottom wall row) contain player buildings " +
-                        $"({string.Join(", ", foreignBuildings)}). Remove them, save and re-load.");
-                    return;
+                    int removed = 0;
+                    foreach (Building b in Components.BuildingCompletes.Items)
+                    {
+                        if (b == null || b.GetMyWorldId() != world.id)
+                        {
+                            continue;
+                        }
+                        int row = Grid.CellRow(b.NaturalBuildingCell());
+                        if (row != topWallOld && row != topWallNew && row != bottomWallNew
+                            && row != shellLeftover)
+                        {
+                            continue;
+                        }
+                        string bid = b.GetComponent<KPrefabID>()?.PrefabID().Name;
+                        if (bid != null && bid != WallTileId && bid != LiquidInputPortId
+                            && bid != LiquidOutputPortId && bid != GasInputPortId && bid != GasOutputPortId)
+                        {
+                            UnityEngine.Object.Destroy(b.gameObject);
+                            removed++;
+                        }
+                    }
+                    Debug.Log($"[CustomRocketInterior] Removed {removed} player building(s) in repair rows " +
+                        $"of world {world.id} ({string.Join(", ", foreignBuildings)}).");
                 }
                 // 新底墙行(旧空边距行)一般无对象, 但保险起见仍检查; 旧底墙行(1)
                 // 修复后变成内部行, 其上的管道/电线不受影响, 不列入冲突.
@@ -130,25 +151,27 @@ namespace CustomRocketInterior.Patches
                         {
                             if (Grid.Objects[c, (int)layer] != null)
                             {
-                                Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
-                                    $"bottom rows contain {layer}. Remove them, save and re-load.");
-                                return;
+                                UnityEngine.Object.Destroy(Grid.Objects[c, (int)layer]);
                             }
                         }
                     }
                 }
-                for (int r = topWallNew; r <= topWallOld; r++)
+                // 冲突行上的管道/电线等对象同样直接拆除
+                foreach (ObjectLayer layer in layers)
                 {
-                    for (int x = left; x <= right; x++)
+                    if (layer == ObjectLayer.Building)
                     {
-                        int c = Grid.XYToCell(x, r);
-                        foreach (ObjectLayer layer in layers)
+                        continue; // 建筑已在上面处理
+                    }
+                    for (int r = topWallNew; r <= topWallOld; r++)
+                    {
+                        for (int x = left; x <= right; x++)
                         {
-                            if (Grid.Objects[c, (int)layer] != null)
+                            int c = Grid.XYToCell(x, r);
+                            GameObject go = Grid.Objects[c, (int)layer];
+                            if (go != null)
                             {
-                                Debug.LogWarning($"[CustomRocketInterior] Interior repair SKIPPED for world {world.id}: " +
-                                    $"top rows contain {layer}. Remove them, save and re-load.");
-                                return;
+                                UnityEngine.Object.Destroy(go);
                             }
                         }
                     }
