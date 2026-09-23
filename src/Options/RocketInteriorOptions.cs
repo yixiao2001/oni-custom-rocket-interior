@@ -3,32 +3,47 @@ using PeterHan.PLib.Options;
 namespace CustomRocketInterior.Options
 {
     /// <summary>
-    /// 墙体材质。用中文命名枚举成员，这样 PLib 的下拉框会直接显示中文标签。
+    /// 墙体材质。
+    ///
+    /// 注意：枚举成员名必须是 ASCII——它们会进入 JSON 配置、Enum.GetValues/GetMember
+    /// 反射匹配、ToUpperInvariant 生成的 STRINGS key 等路径；显示名通过 [Option]
+    /// 指向字符串表 key（LookInStrings 按语言解析），不再依赖中文标识符。
     /// </summary>
-    public enum 墙体材质
+    public enum WallMaterial
     {
-        钢,
-        火成岩,
-        中子质,
-        玻璃,
+        [Option(StringKeys.WALL_STEEL_NAME, StringKeys.WALL_MATERIAL_TOOLTIP)]
+        Steel,
+
+        [Option(StringKeys.WALL_IGNEOUS_ROCK_NAME, StringKeys.WALL_MATERIAL_TOOLTIP)]
+        IgneousRock,
+
+        [Option(StringKeys.WALL_NEUTRONIUM_NAME, StringKeys.WALL_MATERIAL_TOOLTIP)]
+        Neutronium,
+
+        [Option(StringKeys.WALL_GLASS_NAME, StringKeys.WALL_MATERIAL_TOOLTIP)]
+        Glass,
     }
 
     /// <summary>
     /// mod 设置项：在 主菜单 -> 模组 -> 本 mod 的“设置”按钮中修改。
     /// 配置持久化到 PLib 的 config.json，启动时读取。
+    ///
+    /// 所有显示文本均以字符串表 key 经 PLib 的 LookInStrings 按语言解析：
+    /// 英文用户看到英文（ASCII，任何字库都能渲染），中文用户在 translations/zh.po
+    /// 命中后看到中文（游戏切到中文字库渲染）。
     /// </summary>
     [ConfigFile]
     public sealed class RocketInteriorOptions
     {
-        [Option("舱室宽度", "火箭内部世界的宽度（格）。原版太空员舱为 12。", "大小")]
+        [Option(StringKeys.INTERIOR_WIDTH_NAME, StringKeys.INTERIOR_WIDTH_TOOLTIP, StringKeys.CATEGORY_SIZE)]
         [Limit(12, 96)]
         public int WorldWidth { get; set; } = 40;
 
-        [Option("舱室高度", "火箭内部世界的高度（格）。原版太空员舱为 11。", "大小")]
+        [Option(StringKeys.INTERIOR_HEIGHT_NAME, StringKeys.INTERIOR_HEIGHT_TOOLTIP, StringKeys.CATEGORY_SIZE)]
         [Limit(12, 96)]
         public int WorldHeight { get; set; } = 40;
 
-        [Option("墙体材质", "外壳墙砖与背板格子的材料。", "外观")]
-        public 墙体材质 WallMaterial { get; set; } = 墙体材质.钢;
+        [Option(StringKeys.WALL_MATERIAL_NAME, StringKeys.WALL_MATERIAL_TOOLTIP, StringKeys.CATEGORY_APPEARANCE)]
+        public WallMaterial WallMaterial { get; set; } = WallMaterial.Steel;
     }
 }

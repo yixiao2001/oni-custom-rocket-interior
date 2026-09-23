@@ -38,6 +38,7 @@ Main Menu → Mods → Custom Rocket Interior → **Options**:
 | Interior height | 12–96 tiles | 40 | Height of the interior world |
 | Wall material | Steel / Igneous Rock / Neutronium / Glass | Steel | Material of wall tiles + backing cells |
 
+- The options UI follows the game language: English by default, Simplified Chinese when the game is set to Chinese (`translations/zh.po`);
 - Options are re-read every time a new rocket interior is created — new rockets use them immediately;
 - Larger interiors consume more of the global grid; when exhausted, the game reports "No free rocket interior";
 - Only affects **newly built** rockets; existing ones are baked into the save.
@@ -81,9 +82,11 @@ reusing the stored publishedfileid.
 ```
 src/
 ├── Mod.cs                        # entry point (read options → apply config → register options UI)
-├── Options/RocketInteriorOptions.cs  # PLib options (with Chinese enum dropdown)
+├── Strings.cs                    # localized UI strings (English source) + translation loader
+├── Options/RocketInteriorOptions.cs  # PLib options (labels resolved via the string table)
 ├── Config/InteriorSizeConfig.cs  # runtime configuration
 ├── Core/InteriorResizer.cs       # core pure logic: template reshaping
+├── translations/zh.po            # Simplified Chinese translation of the options UI
 └── Patches/
     ├── TemplateCachePatch.cs         # intercepts template loading, applies reshaping
     ├── RevealInteriorWorldPatch.cs   # removes fog from interior worlds

@@ -28,7 +28,7 @@ namespace CustomRocketInterior.Config
         public static SimHashes WallElement = SimHashes.Steel;
 
         /// <summary>最近一次套用的材质选项（用于检测配置变化）</summary>
-        public static 墙体材质 LastWallMaterial = 墙体材质.钢;
+        public static WallMaterial LastWallMaterial = WallMaterial.Steel;
 
         /// <summary>把玩家选项套用到运行时配置（含边界钳制）</summary>
         public static void Apply(RocketInteriorOptions o)
@@ -45,16 +45,16 @@ namespace CustomRocketInterior.Config
             LastWallMaterial = o.WallMaterial;
         }
 
-        private static SimHashes ToElement(墙体材质 material)
+        private static SimHashes ToElement(WallMaterial material)
         {
             switch (material)
             {
-                case 墙体材质.火成岩:
+                case WallMaterial.IgneousRock:
                     return SimHashes.IgneousRock;
-                case 墙体材质.中子质:
+                case WallMaterial.Neutronium:
                     // 游戏内部名 Unobtanium，即地图边缘的不可破坏“中子质”
                     return SimHashes.Unobtanium;
-                case 墙体材质.玻璃:
+                case WallMaterial.Glass:
                     return SimHashes.Glass;
                 default:
                     return SimHashes.Steel;

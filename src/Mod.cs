@@ -14,6 +14,11 @@ namespace CustomRocketInterior
     {
         public override void OnLoad(Harmony harmony)
         {
+            // 本地化先行：注册 LocString 字符串树（英文源文本）并按当前语言套用
+            // translations/zh.po。此前 mod 硬编码中文选项文本，在英文（未选语言）下
+            // 会以纯拉丁字库渲染缺字/崩溃；改为字符串表后文本与字库按语言配套。
+            STRINGS.Register();
+
             base.OnLoad(harmony); // 应用全部 [HarmonyPatch]
 
             // 读取玩家设置（PLib 持久化的 config.json），套用到运行时配置

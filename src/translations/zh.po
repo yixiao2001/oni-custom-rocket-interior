@@ -1,0 +1,63 @@
+# Custom Rocket Interior - Simplified Chinese translation (zh)
+# 简体中文翻译。msgctxt 为 LocString key（勿改），msgid 为源语言（英文）文本。
+# 游戏语言为中文时由 PLib/本 mod 自动套用；其他语言回落英文源文本。
+
+#. CustomRocketInterior.STRINGS.OPTIONS.INTERIOR_WIDTH_NAME
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.INTERIOR_WIDTH_NAME"
+msgid "Interior Width"
+msgstr "舱室宽度"
+
+#. CustomRocketInterior.STRINGS.OPTIONS.INTERIOR_WIDTH_TOOLTIP
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.INTERIOR_WIDTH_TOOLTIP"
+msgid "Width of the rocket interior world, in tiles. The vanilla Spacefarer Module is 12 tiles wide."
+msgstr "火箭内部世界的宽度（格）。原版太空员舱为 12。"
+
+#. CustomRocketInterior.STRINGS.OPTIONS.INTERIOR_HEIGHT_NAME
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.INTERIOR_HEIGHT_NAME"
+msgid "Interior Height"
+msgstr "舱室高度"
+
+#. CustomRocketInterior.STRINGS.OPTIONS.INTERIOR_HEIGHT_TOOLTIP
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.INTERIOR_HEIGHT_TOOLTIP"
+msgid "Height of the rocket interior world, in tiles. The vanilla Spacefarer Module is 11 tiles tall."
+msgstr "火箭内部世界的高度（格）。原版太空员舱为 11。"
+
+#. CustomRocketInterior.STRINGS.OPTIONS.WALL_MATERIAL_NAME
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.WALL_MATERIAL_NAME"
+msgid "Wall Material"
+msgstr "墙体材质"
+
+#. CustomRocketInterior.STRINGS.OPTIONS.WALL_MATERIAL_TOOLTIP
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.WALL_MATERIAL_TOOLTIP"
+msgid "Material of the shell wall tiles and their backing cells."
+msgstr "外壳墙砖与背板格子的材料。"
+
+#. CustomRocketInterior.STRINGS.OPTIONS.CATEGORY_SIZE
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.CATEGORY_SIZE"
+msgid "Size"
+msgstr "大小"
+
+#. CustomRocketInterior.STRINGS.OPTIONS.CATEGORY_APPEARANCE
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.CATEGORY_APPEARANCE"
+msgid "Appearance"
+msgstr "外观"
+
+#. CustomRocketInterior.STRINGS.WALL_MATERIAL.STEEL_NAME
+msgctxt "CustomRocketInterior.STRINGS.WALL_MATERIAL.STEEL_NAME"
+msgid "Steel"
+msgstr "钢"
+
+#. CustomRocketInterior.STRINGS.WALL_MATERIAL.IGNEOUS_ROCK_NAME
+msgctxt "CustomRocketInterior.STRINGS.WALL_MATERIAL.IGNEOUS_ROCK_NAME"
+msgid "Igneous Rock"
+msgstr "火成岩"
+
+#. CustomRocketInterior.STRINGS.WALL_MATERIAL.NEUTRONIUM_NAME
+msgctxt "CustomRocketInterior.STRINGS.WALL_MATERIAL.NEUTRONIUM_NAME"
+msgid "Neutronium (unbreakable)"
+msgstr "中子质（不可破坏）"
+
+#. CustomRocketInterior.STRINGS.WALL_MATERIAL.GLASS_NAME
+msgctxt "CustomRocketInterior.STRINGS.WALL_MATERIAL.GLASS_NAME"
+msgid "Glass"
+msgstr "玻璃"

@@ -42,6 +42,7 @@
 | 舱室高度 | 12–96 格 | 40 | 高度同上 |
 | 墙体材质 | 钢 / 火成岩 / 中子质 / 玻璃 | 钢 | 外壳墙砖建造材质 + 背板格子元素 |
 
+- 设置界面跟随游戏语言：默认英文，游戏语言为简体中文时显示中文（`translations/zh.po`）；
 - 每次新建火箭内部前实时读取配置，改完设置后**新建的火箭立即生效**；
 - 尺寸越大，全局网格能同时容纳的火箭内部越少，超限时游戏会提示 No free rocket interior；
 - 只影响**新建**的火箭；已建成的火箭内部已在存档中固化。
@@ -84,9 +85,11 @@ ONI 客户端没有内置 Steam 上传器，本仓库用 Valve 官方 steamcmd �
 ```
 src/
 ├── Mod.cs                        # 入口（读选项 → 套用配置 → 注册设置界面）
-├── Options/RocketInteriorOptions.cs  # PLib 设置项（含中文枚举下拉框）
+├── Strings.cs                    # 设置界面字符串表（英文源文本）+ 翻译加载
+├── Options/RocketInteriorOptions.cs  # PLib 设置项（显示名走字符串表）
 ├── Config/InteriorSizeConfig.cs  # 运行时配置
 ├── Core/InteriorResizer.cs       # 核心纯逻辑：模板重塑
+├── translations/zh.po            # 设置界面的简体中文翻译
 └── Patches/
     ├── TemplateCachePatch.cs         # 拦截模板加载并重塑
     ├── RevealInteriorWorldPatch.cs   # 内部世界全图去迷雾

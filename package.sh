@@ -18,6 +18,11 @@ rm -rf "$STAGE" && mkdir -p "$STAGE"
 cp src/bin/Release/net48/CustomRocketInterior.dll "$STAGE/"
 cp src/bin/Release/net48/PLib.dll "$STAGE/" 2>/dev/null || echo "WARN: PLib.dll not found in output"
 cp src/mod.yaml src/mod_info.yaml "$STAGE/"
+# 翻译文件（PLib 的 PLocalization 从 <mod>/translations/<code>.po 加载）
+if [ -d src/translations ]; then
+    mkdir -p "$STAGE/translations"
+    cp src/translations/*.po "$STAGE/translations/"
+fi
 
 echo "== zip =="
 mkdir -p "$OUT"
