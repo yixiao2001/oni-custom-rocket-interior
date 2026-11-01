@@ -9,7 +9,7 @@ namespace CustomRocketInterior.Patches
     /// 让选项修改“即时生效”：
     /// 玩家在主菜单改完设置后往往直接开始游戏，而 OnLoad 早在启动时就执行过了。
     /// 此补丁在每次创建火箭内部世界前重新读取 config.json，
-    /// 若配置有变化则刷新运行时配置、世界尺寸并清空模板缓存——
+    /// 若配置有变化则刷新运行时配置、世界尺寸，目标模板在下次读取时按新设置重塑——
     /// 之后新建的火箭立即使用新尺寸与新材质，无需重启游戏。
     /// </summary>
     [HarmonyPatch(typeof(ClusterManager), nameof(ClusterManager.CreateRocketInteriorWorld))]
@@ -26,23 +26,21 @@ namespace CustomRocketInterior.Patches
                     return;
                 }
 
-                bool changed = options.WorldWidth != InteriorSizeConfig.WorldSize.x
-                            || options.WorldHeight != InteriorSizeConfig.WorldSize.y
-                            || options.WallMaterial != InteriorSizeConfig.LastWallMaterial;
+                var previousSize = InteriorSizeConfig.WorldSize;
+                var previousMaterial = InteriorSizeConfig.LastWallMaterial;
+                InteriorSizeConfig.Apply(options);
+                bool changed = previousSize.x != InteriorSizeConfig.WorldSize.x
+                            || previousSize.y != InteriorSizeConfig.WorldSize.y
+                            || previousMaterial != InteriorSizeConfig.LastWallMaterial;
 
                 if (!changed)
                 {
                     return;
                 }
 
-                InteriorSizeConfig.Apply(options);
                 TUNING.ROCKETRY.ROCKET_INTERIOR_SIZE = InteriorSizeConfig.WorldSize;
-                // 重置模板缓存让下一次 GetTemplate 拿到原生模板、按新配置重塑。
-                // 注意：Clear() 只是把字典置空（GetTemplate 不会自行初始化），
-                // 必须像游戏本体 DebugBaseTemplateButton 那样 Clear + Init 成对调用，
-                // 否则后续 GetTemplate 会对 null 字典抛 NullReferenceException。
-                TemplateCache.Clear();
-                TemplateCache.Init();
+                // InteriorResizer detects size/material changes per cached template;
+                // leave unrelated world/POI template caches intact.
             }
             catch (System.Exception e)
             {

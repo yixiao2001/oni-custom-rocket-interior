@@ -1,0 +1,15 @@
+<Project>
+  <!-- Embedding PLib prevents Assembly.LoadFrom from reusing another mod's old
+       standalone PLib.dll. This is also how upstream PLib mods are distributed. -->
+  <Target Name="ILRepacker" AfterTargets="Build">
+    <ItemGroup>
+      <_MergeInputs Include="$(IntermediateOutputPath)$(TargetFileName)" />
+      <_MergeInputs Include="$(TargetDir)PLib.dll" />
+      <_MergeSearch Include="$(ONI_MANAGED_DIR)" />
+      <_MergeSearch Include="$(TargetDir)" />
+    </ItemGroup>
+    <ILRepack InputAssemblies="@(_MergeInputs)" OutputFile="$(TargetPath)"
+              TargetKind="Dll" Internalize="true" LibraryPath="@(_MergeSearch)"
+              DebugInfo="false" />
+  </Target>
+</Project>

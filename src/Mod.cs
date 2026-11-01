@@ -14,6 +14,11 @@ namespace CustomRocketInterior
     {
         public override void OnLoad(Harmony harmony)
         {
+            PeterHan.PLib.Core.PUtil.InitLibrary();
+            // 本地化先行：注册 LocString 字符串树（英文源文本）并按当前语言套用
+            // translations/zh.po，让选项名称跟随游戏语言。
+            STRINGS.Register();
+
             base.OnLoad(harmony); // 应用全部 [HarmonyPatch]
 
             // 读取玩家设置（PLib 持久化的 config.json），套用到运行时配置

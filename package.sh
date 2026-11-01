@@ -11,13 +11,21 @@ OUT="release"
 STAGE="$OUT/CustomRocketInterior"
 
 echo "== build =="
-dotnet build src/CustomRocketInterior.csproj -c Release
+dotnet build src/CustomRocketInterior.csproj -c Release -p:ONI_MODS_DEV_DIR=/nonexistent
+dotnet run --project tests/RegressionTests.csproj -c Release
+dotnet run --project tests/RegressionTests.csproj -c Release --no-build -- \
+  --check-mod src/bin/Release/netstandard2.1/CustomRocketInterior.dll
 
 echo "== stage v$VERSION =="
 rm -rf "$STAGE" && mkdir -p "$STAGE"
-cp src/bin/Release/net48/CustomRocketInterior.dll "$STAGE/"
-cp src/bin/Release/net48/PLib.dll "$STAGE/" 2>/dev/null || echo "WARN: PLib.dll not found in output"
+cp src/bin/Release/netstandard2.1/CustomRocketInterior.dll "$STAGE/"
 cp src/mod.yaml src/mod_info.yaml "$STAGE/"
+cp LICENSE PLib-LICENSE.txt "$STAGE/"
+# 翻译文件（PLib 的 PLocalization 从 <mod>/translations/<code>.po 加载）
+if [ -d src/translations ]; then
+    mkdir -p "$STAGE/translations"
+    cp src/translations/*.po "$STAGE/translations/"
+fi
 
 echo "== zip =="
 mkdir -p "$OUT"
@@ -25,8 +33,9 @@ rm -f "$OUT/CustomRocketInterior-v$VERSION.zip"
 python3 - <<EOF
 import zipfile, os
 with zipfile.ZipFile("$OUT/CustomRocketInterior-v$VERSION.zip", "w", zipfile.ZIP_DEFLATED) as z:
-    for root, _, files in os.walk("$STAGE"):
-        for f in files:
+    for root, dirs, files in os.walk("$STAGE"):
+        dirs.sort()
+        for f in sorted(files):
             p = os.path.join(root, f)
             z.write(p, os.path.relpath(p, "$OUT"))
 print("packed:", "$OUT/CustomRocketInterior-v$VERSION.zip")

@@ -1,17 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- 注意：当前版本（U-54+）的缺氧游戏程序集基于 .NET Framework 4.8，必须对齐 -->
-    <TargetFramework>net48</TargetFramework>
+    <!-- Match U59's .NET Standard 2.1 API and PLib's current game target. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <LangVersion>latest</LangVersion>
     <RootNamespace>CustomRocketInterior</RootNamespace>
     <AssemblyName>CustomRocketInterior</AssemblyName>
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <Version>0.2.1</Version>
-    <!-- 在 Linux 上编译 net472 需要 .NET Framework 参考程序集包（自动从 NuGet 还原） -->
-    <AutomaticallyUseReferenceAssemblyPackages>true</AutomaticallyUseReferenceAssemblyPackages>
+    <Version>0.3.0</Version>
     <!--
       游戏相关路径（按需修改，也可用环境变量覆盖）：
       ONI_MANAGED_DIR  游戏的 Managed 目录
@@ -53,18 +52,39 @@
 
   <ItemGroup>
     <PackageReference Include="PLib" Version="4.25.0" />
+    <!-- Use the game's Harmony rather than distributing NuGet's reference DLL. -->
+    <PackageReference Include="Lib.Harmony.Ref" Version="2.4.2" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.48" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      翻译文件双路发布：
+      1) 嵌入资源（LogicalName 固定命名 CustomRocketInterior.translations.<code>.po）：
+         启动时由 STRINGS.ApplyEmbeddedTranslation 自行套用，不依赖打包目录结构，
+         Steam/zip 分发都不会丢；
+      2) 随包松散文件 translations/<code>.po：供 PLib 的 PLocalization 在换语言后
+         自动重载，也方便译者直接编辑/新增其他语言（文件名 = 语言代码）。
+    -->
+    <EmbeddedResource Include="translations/zh.po" LogicalName="CustomRocketInterior.translations.zh.po" />
   </ItemGroup>
 
   <!-- 编译成功后自动部署到游戏 Dev mod 目录，游戏启动即加载 -->
-  <Target Name="DeployToDev" AfterTargets="Build" Condition="Exists('$(ONI_MODS_DEV_DIR)')">
+  <Target Name="DeployToDev" AfterTargets="ILRepacker" Condition="Exists('$(ONI_MODS_DEV_DIR)')">
     <Message Importance="high" Text="Deploying mod to $(ONI_MODS_DEV_DIR)/CustomRocketInterior/" />
-    <!-- mod 本体 + 随包发布的第三方库（PLib.dll）；游戏程序集因 Private=false 不会出现在输出目录 -->
+    <!-- 仅部署合并后的 mod DLL；游戏程序集与独立 PLib.dll 不随包分发 -->
     <ItemGroup>
-      <_DeployDlls Include="$(TargetDir)*.dll" />
+      <_DeployDlls Include="$(TargetPath)" />
     </ItemGroup>
+    <!-- Remove only our obsolete standalone dependency from earlier deployments. -->
+    <Delete Files="$(ONI_MODS_DEV_DIR)/CustomRocketInterior/PLib.dll" />
     <Copy SourceFiles="@(_DeployDlls)" DestinationFolder="$(ONI_MODS_DEV_DIR)/CustomRocketInterior/" SkipUnchangedFiles="false" />
     <Copy SourceFiles="$(MSBuildProjectDirectory)/mod.yaml" DestinationFolder="$(ONI_MODS_DEV_DIR)/CustomRocketInterior/" SkipUnchangedFiles="false" Condition="Exists('$(MSBuildProjectDirectory)/mod.yaml')" />
     <Copy SourceFiles="$(MSBuildProjectDirectory)/mod_info.yaml" DestinationFolder="$(ONI_MODS_DEV_DIR)/CustomRocketInterior/" SkipUnchangedFiles="false" Condition="Exists('$(MSBuildProjectDirectory)/mod_info.yaml')" />
+    <ItemGroup>
+      <_DeployTranslations Include="$(MSBuildProjectDirectory)/translations/**" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DeployTranslations)" DestinationFolder="$(ONI_MODS_DEV_DIR)/CustomRocketInterior/translations/" SkipUnchangedFiles="false" Condition="Exists('$(MSBuildProjectDirectory)/translations')" />
   </Target>
 
 </Project>

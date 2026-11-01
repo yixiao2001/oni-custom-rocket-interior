@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using CustomRocketInterior.Config;
 using TemplateClasses;
 using UnityEngine;
@@ -25,7 +26,7 @@ namespace CustomRocketInterior.Core
     ///
     /// 重塑策略（幂等）：
     ///   1. 以原点为中心生成新包围盒（模板以原点印在世界中心），尺寸 = 配置的世界尺寸；
-    ///   2. 删除全部墙砖/窗砖建筑；删除全部非真空格（保护位置除外）；
+    ///   2. 删除全部墙砖/窗砖建筑；清空旧格子；
     ///   3. 功能内容按规则吸附到新结构上：
     ///        气体端口 -> 新底边墙线；液体端口 -> 新顶边墙线；
     ///        内部门 -> 左下角（左墙线、底边内侧）；控制站 -> 底边内一格；
@@ -47,6 +48,18 @@ namespace CustomRocketInterior.Core
         private const float ShellTemperature = 293.15f;
         private const float ShellMass = 100f;
 
+        // Cache by template identity and the complete applied configuration. Bounds alone
+        // cannot detect a material change or an untouched template of the same size.
+        private static readonly ConditionalWeakTable<TemplateContainer, AppliedLayout> layouts =
+            new ConditionalWeakTable<TemplateContainer, AppliedLayout>();
+
+        private sealed class AppliedLayout
+        {
+            public int Width;
+            public int Height;
+            public SimHashes Material;
+        }
+
         /// <summary>
         /// 补丁入口：按当前配置把模板重塑为填满世界。无关模板或已重塑过时安全跳过。
         /// </summary>
@@ -60,7 +73,8 @@ namespace CustomRocketInterior.Core
             // 安全过滤：TemplateCache 同时服务基地/POI 等所有模板，
             // 只允许作用于火箭内部模板。注意路径格式 "expansion1::interiors/habitat_medium"
             // 中 interiors 前面是 :: 分隔符，因此匹配 "interiors/" 即可。
-            if (!templatePath.Contains("interiors/"))
+            if (!templatePath.StartsWith("expansion1::interiors/", StringComparison.Ordinal)
+                && !templatePath.StartsWith("interiors/", StringComparison.Ordinal))
             {
                 return;
             }
@@ -95,22 +109,23 @@ namespace CustomRocketInterior.Core
                 return false;
             }
 
-            ComputeBounds(template, out int xmin, out int xmax, out int ymin, out int ymax);
-
             newWidth = Math.Max(newWidth, MinSizeClamp);
             newHeight = Math.Max(newHeight, MinSizeClamp);
+
+            if (layouts.TryGetValue(template, out AppliedLayout layout)
+                && layout.Width == newWidth && layout.Height == newHeight
+                && layout.Material == InteriorSizeConfig.WallElement)
+            {
+                return false;
+            }
+
+            ComputeBounds(template, out int xmin, out int xmax, out int ymin, out int ymax);
 
             // 以原点为中心的新包围盒（模板印在世界中心，居中才能贴合世界边缘）
             int nxmin = -(newWidth / 2);
             int nymin = -(newHeight / 2);
             int nxmax = nxmin + newWidth - 1;
             int nymax = nymin + newHeight - 1;
-
-            // 幂等保护：已是目标居中尺寸则跳过（模板是进程级缓存单例，会被反复获取）。
-            if (xmin == nxmin && xmax == nxmax && ymin == nymin && ymax == nymax)
-            {
-                return false;
-            }
 
             int curW = xmax - xmin + 1;
             int curH = ymax - ymin + 1;
@@ -126,6 +141,10 @@ namespace CustomRocketInterior.Core
             FillNewLayout(template, nxmin, nxmax, nymin, nymax);
 
             template.RefreshInfo();
+            layouts.Remove(template);
+            layouts.Add(template, new AppliedLayout {
+                Width = newWidth, Height = newHeight, Material = InteriorSizeConfig.WallElement
+            });
             Debug.Log($"[CustomRocketInterior] Resized interior '{template.name}': " +
                       $"{curW}x{curH} -> {newWidth}x{newHeight}, wall = {InteriorSizeConfig.WallElement}");
             return true;
@@ -183,15 +202,17 @@ namespace CustomRocketInterior.Core
         }
 
         /// <summary>
-        /// 清空全部壳层：所有墙砖/窗砖建筑，以及所有非真空的实体格子。
-        /// 用“非真空”而不是枚举具体材料，天然兼容任意可配置的墙体材料；
+        /// 清空全部壳层：所有墙砖/窗砖建筑，以及旧的实体与真空格子。
+        /// 全量重建才能确保缩小模板时不残留旧范围的格子；
         /// 不做任何位置保护——功能建筑已先一步吸附到新结构，
         /// 其新位置的背板格由 FillNewLayout 统一重建。
         /// </summary>
         private static void ClearShell(TemplateContainer t)
         {
             t.buildings.RemoveAll(b => b.id == WallTileId || b.id == WindowTileId);
-            t.cells.RemoveAll(c => c.element != SimHashes.Vacuum);
+            // Rebuild all cells: retaining old vacuum cells leaves out-of-bounds
+            // content behind when the next rocket uses a smaller interior.
+            t.cells.Clear();
         }
 
         /// <summary>

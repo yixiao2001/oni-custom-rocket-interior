@@ -42,6 +42,7 @@
 | 舱室高度 | 12–96 格 | 40 | 高度同上 |
 | 墙体材质 | 钢 / 火成岩 / 中子质 / 玻璃 | 钢 | 外壳墙砖建造材质 + 背板格子元素 |
 
+- 设置界面跟随游戏语言：默认英文，游戏语言为简体中文时显示中文（`translations/zh.po`）；
 - 每次新建火箭内部前实时读取配置，改完设置后**新建的火箭立即生效**；
 - 尺寸越大，全局网格能同时容纳的火箭内部越少，超限时游戏会提示 No free rocket interior；
 - 只影响**新建**的火箭；已建成的火箭内部已在存档中固化。
@@ -65,28 +66,33 @@
 > ⚠️ **发布必须使用官方工具**：Steam 库 → 工具 → "Oxygen Not Included - Mod Uploader"。
 > 用 steamcmd 直接上传会产生游戏无法读取的散装内容格式，导致所有订阅者"下载失败"。
 
-- 编译需 .NET SDK 8 与游戏本体；游戏路径通过环境变量 `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` 或直接改 csproj 配置；
+- 编译需 .NET SDK 8 与 U59 游戏本体（目标 netstandard2.1）；游戏路径通过环境变量 `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` 或直接改 csproj 配置；
 - 反编译查源码：`ilspycmd -t 类名 <Managed目录>/Assembly-CSharp.dll`；
 - 项目结构与设计原则见下方目录树与代码注释。
 
 ### 发布到 Steam 创意工坊
 
-ONI 客户端没有内置 Steam 上传器，本仓库用 Valve 官方 steamcmd 管线发布：
-
 ```bash
-./publish.sh --upload <你的Steam用户名>
+./publish.sh    # 编译、运行回归测试、生成 release/CustomRocketInterior-v0.3.0.zip
 ```
 
-脚本会自动构建、打包、把干净内容与 workshop.vdf 暂存到 Windows 侧
-`Documents/oni-upload/` 并调用 steamcmd 上传。首次运行会创建新物品并要求
-输入密码与 Steam Guard 验证码；之后自动复用 publishedfileid 进行版本更新。
+打开 Steam 库 → 工具 → **Oxygen Not Included Mod Uploader**，选择现有的
+**Custom Rocket Interior**（ID `3789310279`）→ Edit，将数据目录改为 `release/CustomRocketInterior/` 后更新。
+保留原条目的标题、描述、预览图和可见性，不要创建新条目。
+`publish.sh` 只准备发布包，不会登录 Steam 或执行上传。
+
+PLib 4.25.0 已合并到模组 DLL 中，不再分发独立 `PLib.dll`，避免加载其他模组的旧副本。
+手动覆盖安装时，删除此模组文件夹内旧的 `PLib.dll`，保留 `config.json`。
 
 ```
 src/
+├── ILRepack.targets             # 把 PLib 合并到模组 DLL
 ├── Mod.cs                        # 入口（读选项 → 套用配置 → 注册设置界面）
-├── Options/RocketInteriorOptions.cs  # PLib 设置项（含中文枚举下拉框）
+├── Strings.cs                    # 设置界面字符串表（英文源文本）+ 翻译加载
+├── Options/RocketInteriorOptions.cs  # PLib 设置项（显示名走字符串表）
 ├── Config/InteriorSizeConfig.cs  # 运行时配置
 ├── Core/InteriorResizer.cs       # 核心纯逻辑：模板重塑
+├── translations/zh.po            # 设置界面的简体中文翻译
 └── Patches/
     ├── TemplateCachePatch.cs         # 拦截模板加载并重塑
     ├── RevealInteriorWorldPatch.cs   # 内部世界全图去迷雾
@@ -102,3 +108,11 @@ src/
 ## 许可证
 
 MIT — 详见 [LICENSE](LICENSE)。
+
+## v0.3.0 修复
+
+- 合并 PLib 以避免旧 `PLib.dll` 被抢先加载而触发 `TMPro.FaceInfo` 配置界面崩溃（issue #1）。
+- 设置界面随游戏语言切换中英文，沿用原有数字材质配置值。
+- 修复同尺寸换材质被跳过，以及缩小缓存模板后残留旧真空格的问题。
+- 规范 12–96 的尺寸范围和无效材质配置；修改选项不再清空其他模板的缓存。
+- 发布前自动运行模板逻辑测试与合并 DLL 检查。实际 UI/存档验证结果见发布说明。

@@ -38,6 +38,7 @@ Main Menu → Mods → Custom Rocket Interior → **Options**:
 | Interior height | 12–96 tiles | 40 | Height of the interior world |
 | Wall material | Steel / Igneous Rock / Neutronium / Glass | Steel | Material of wall tiles + backing cells |
 
+- The options UI follows the game language: English by default, Simplified Chinese when the game is set to Chinese (`translations/zh.po`);
 - Options are re-read every time a new rocket interior is created — new rockets use them immediately;
 - Larger interiors consume more of the global grid; when exhausted, the game reports "No free rocket interior";
 - Only affects **newly built** rockets; existing ones are baked into the save.
@@ -61,29 +62,33 @@ See the source comments (header of `src/Core/InteriorResizer.cs`) for full detai
 > ⚠️ **Publish only with the official tool**: Steam Library -> Tools -> "Oxygen Not Included - Mod Uploader".
 > Uploading via raw steamcmd produces a loose file layout the game cannot read; every subscriber gets a download failure.
 
-- Building requires .NET SDK 8 and a copy of the game; configure paths via the `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` environment variables or directly in the csproj;
+- Building requires .NET SDK 8 and U59 game assemblies (target: netstandard2.1); configure paths via the `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` environment variables or directly in the csproj;
 - Inspect game code with: `ilspycmd -t TypeName <Managed dir>/Assembly-CSharp.dll`.
 
 ### Publishing to the Steam Workshop
 
-The ONI client has no built-in Steam uploader, so this repo uses the official
-steamcmd pipeline:
-
 ```bash
-./publish.sh --upload <your-steam-username>
+./publish.sh    # build, run regression tests and create the release ZIP
 ```
 
-The script builds, stages a clean content folder plus workshop.vdf under
-Windows `Documents/oni-upload/`, and invokes steamcmd. The first run creates
-the workshop item (password + Steam Guard required); later runs update it by
-reusing the stored publishedfileid.
+Open Steam Library → Tools → **Oxygen Not Included Mod Uploader**. Select the existing
+**Custom Rocket Interior** item (`3789310279`), choose Edit and set its data directory to `release/CustomRocketInterior/`.
+Keep its title, description, preview and visibility. Do not create a new item.
+`publish.sh` only prepares the package; it does not log in or upload.
+
+PLib 4.25.0 is merged into the mod DLL to avoid binding to another mod's old standalone
+`PLib.dll`. When manually upgrading, remove the old `PLib.dll` from this mod's folder
+and keep `config.json`.
 
 ```
 src/
+├── ILRepack.targets             # merges PLib into the mod DLL
 ├── Mod.cs                        # entry point (read options → apply config → register options UI)
-├── Options/RocketInteriorOptions.cs  # PLib options (with Chinese enum dropdown)
+├── Strings.cs                    # localized UI strings (English source) + translation loader
+├── Options/RocketInteriorOptions.cs  # PLib options (labels resolved via the string table)
 ├── Config/InteriorSizeConfig.cs  # runtime configuration
 ├── Core/InteriorResizer.cs       # core pure logic: template reshaping
+├── translations/zh.po            # Simplified Chinese translation of the options UI
 └── Patches/
     ├── TemplateCachePatch.cs         # intercepts template loading, applies reshaping
     ├── RevealInteriorWorldPatch.cs   # removes fog from interior worlds
@@ -99,3 +104,11 @@ src/
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## v0.3.0 fixes
+
+- Merge PLib to avoid an old standalone DLL being loaded first and crashing the options UI with `TMPro.FaceInfo` (issue #1).
+- English/Chinese options labels follow the game language and preserve numeric material settings.
+- Fix material-only changes being skipped and old vacuum cells remaining after shrinking cached templates.
+- Normalize size limits (12–96) and invalid materials; preserve unrelated template caches when changing settings.
+- Run template regression tests and merged-DLL checks before packaging. See release notes for actual UI/save validation.
