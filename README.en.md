@@ -9,7 +9,7 @@ Tested on build U59-744825 (base game + *Spaced Out!* DLC).
 ## Features
 
 - 🚀 **Fully customizable interior**: width/height from 12 to 96 tiles each (vanilla Spacefarer Module is only 12×11). The room automatically fills the entire rocket interior world.
-- 🧱 **Four wall materials**: Steel / Igneous Rock / Neutronium (unbreakable) / Glass — applied to both the wall-tile buildings and their backing cells.
+- 🧱 **Four wall materials**: Steel / Igneous Rock / Neutronium / Glass — applied to both the wall-tile buildings and their backing cells.
 - 🌫️ **No fog of war** inside rocket interiors — no more leftover fog rings in the corners.
 - ⚙️ **In-game options screen** (powered by PLib). Changes apply immediately to newly built rockets, no restart needed.
 - 🚪 The interior door snaps to the bottom-left corner; gas/liquid ports and the control station are re-embedded into the new wall layout automatically.
@@ -42,6 +42,17 @@ Main Menu → Mods → Custom Rocket Interior → **Options**:
 - Options are re-read every time a new rocket interior is created — new rockets use them immediately;
 - Larger interiors consume more of the global grid; when exhausted, the game reports "No free rocket interior";
 - Only affects **newly built** rockets; existing ones are baked into the save.
+
+## Removable walls and rebuilt supports (v0.4.0)
+
+Two Construction options are enabled by default; changing them requires a restart:
+
+- **Allow wall deconstruction** unlocks normal deconstruction of hull/window tiles, including Neutronium. It does not unlock the four fixed gas/liquid ports, interior door or control station. Existing interiors receive the permission when loaded. Turning it off does not restore removed walls.
+- **Mount utilities on any solid tile** allows the six player-built cargo input/output fittings and power plug to use built solid tiles inside rockets: ordinary, insulated, metal and window tiles, for example. Rotation still determines the adjacent supporting side. Natural cells, mesh/airflow tiles and empty space are excluded. Rules outside rocket interiors remain unchanged.
+
+Removing support marks a utility as unsupported and stops cargo exchange; the power plug disconnects from the rocket circuit. Rebuilding valid solid support restores operation. The four fixed ports stay at their original positions. Player-built cargo fittings access storage through the rocket itself and do not depend on the locations of those ports.
+
+Removing hull tiles does not expand the interior world. Build a replacement enclosure before removing the old one if you want to keep it airtight. Disable the solid-tile option to restore original hull-only placement.
 
 ## How It Works
 
@@ -99,7 +110,7 @@ src/
 
 - Only affects newly built rockets; exterior visuals remain vanilla-sized (cosmetic only);
 - The cluster-map footprint polygon grows with the new walls and may not match the exterior sprite;
-- Outer walls are regular buildings (except Neutronium) and can be dug through, exposing the void at the world edge.
+- With wall deconstruction enabled, hull/window tiles (including Neutronium) can be deconstructed. Fixed gas/liquid ports and the door stay protected. Removing walls does not expand the world.
 
 ## License
 

@@ -54,10 +54,30 @@ msgstr "火成岩"
 
 #. CustomRocketInterior.STRINGS.WALL_MATERIAL.NEUTRONIUM_NAME
 msgctxt "CustomRocketInterior.STRINGS.WALL_MATERIAL.NEUTRONIUM_NAME"
-msgid "Neutronium (unbreakable)"
-msgstr "中子质（不可破坏）"
+msgid "Neutronium"
+msgstr "中子质"
 
 #. CustomRocketInterior.STRINGS.WALL_MATERIAL.GLASS_NAME
 msgctxt "CustomRocketInterior.STRINGS.WALL_MATERIAL.GLASS_NAME"
 msgid "Glass"
 msgstr "玻璃"
+
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.CATEGORY_CONSTRUCTION"
+msgid "Construction"
+msgstr "建造"
+
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.REMOVABLE_WALLS_NAME"
+msgid "Allow wall deconstruction"
+msgstr "允许拆除火箭内墙"
+
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.REMOVABLE_WALLS_TOOLTIP"
+msgid "Allow deconstructing rocket hull and window tiles, including Neutronium. The four fixed gas/liquid ports and interior door stay protected. Applies to existing interiors after restarting and loading the save. Deconstruction does not expand the interior world."
+msgstr "允许拆除火箭舱壳和窗砖，包括中子质墙。四个固定气液端口和舱门仍不可拆。重启并读取存档后对已有舱室生效。拆墙不会扩大内部世界。"
+
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.ANY_SOLID_TILE_NAME"
+msgid "Mount utilities on any solid tile"
+msgstr "输入输出组件可依附任意实心砖"
+
+msgctxt "CustomRocketInterior.STRINGS.OPTIONS.ANY_SOLID_TILE_TOOLTIP"
+msgid "Inside rockets, cargo input/output fittings and the power plug can use any built solid tile as support. Rotation still determines the support side. Natural cells, mesh/airflow tiles and empty space are not valid supports. Utilities stop when support is removed and resume when it is rebuilt. Restart required."
+msgstr "在火箭内部，货舱输入输出组件和电力插座可依附任意自建实心砖，旋转方向仍决定支撑位置。天然格、网格砖、透气砖和空地不能作为支撑。拆掉支撑砖后组件停工，补回后恢复。需要重启。"

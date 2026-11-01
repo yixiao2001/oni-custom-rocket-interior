@@ -40,6 +40,7 @@ namespace PeterHan.PLib.Options
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class OptionAttribute(string name, string tooltip, string category = null) : Attribute { public string Name = name, Tooltip = tooltip, Category = category; }
     [AttributeUsage(AttributeTargets.Property)] public class LimitAttribute(double min, double max) : Attribute { public double Min = min, Max = max; }
+    [AttributeUsage(AttributeTargets.Property)] public class RestartRequiredAttribute : Attribute { }
 }
 namespace CustomRocketInterior
 {
@@ -48,7 +49,9 @@ namespace CustomRocketInterior
         public const string INTERIOR_WIDTH_NAME = "Width", INTERIOR_WIDTH_TOOLTIP = "Width tooltip",
             INTERIOR_HEIGHT_NAME = "Height", INTERIOR_HEIGHT_TOOLTIP = "Height tooltip",
             WALL_MATERIAL_NAME = "Wall", WALL_MATERIAL_TOOLTIP = "Wall tooltip",
-            CATEGORY_SIZE = "Size", CATEGORY_APPEARANCE = "Appearance",
+            CATEGORY_SIZE = "Size", CATEGORY_APPEARANCE = "Appearance", CATEGORY_CONSTRUCTION = "Construction",
+            REMOVABLE_WALLS_NAME = "Removable walls", REMOVABLE_WALLS_TOOLTIP = "Removable walls tooltip",
+            ANY_SOLID_TILE_NAME = "Any solid tile", ANY_SOLID_TILE_TOOLTIP = "Any solid tile tooltip",
             WALL_STEEL_NAME = "Steel", WALL_IGNEOUS_ROCK_NAME = "Igneous Rock",
             WALL_NEUTRONIUM_NAME = "Neutronium", WALL_GLASS_NAME = "Glass";
     }

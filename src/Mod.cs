@@ -25,6 +25,7 @@ namespace CustomRocketInterior
             RocketInteriorOptions options =
                 PLibOptions.ReadSettings<RocketInteriorOptions>() ?? new RocketInteriorOptions();
             InteriorSizeConfig.Apply(options);
+            InteriorBuildingPolicy.Apply(options);
 
             // 扩大火箭内部世界。游戏源码中这是 public static 可变字段（默认 32×32），
             // ClusterManager.CreateRocketInteriorWorld 与 BestFit.CountRocketInteriors

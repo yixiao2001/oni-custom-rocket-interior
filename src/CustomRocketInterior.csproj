@@ -10,7 +10,7 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <!--
       游戏相关路径（按需修改，也可用环境变量覆盖）：
       ONI_MANAGED_DIR  游戏的 Managed 目录
