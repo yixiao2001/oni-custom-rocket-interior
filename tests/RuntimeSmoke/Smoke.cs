@@ -34,6 +34,8 @@ static class MainMenuSmoke {
    var wallPatch=asm.GetType("CustomRocketInterior.Patches.InteriorWallDeconstructionPatch");
    var applyWall=wallPatch.GetMethod("ApplyToWall",BindingFlags.Static|BindingFlags.NonPublic);
    foreach(string id in new[]{"RocketWallTile","RocketEnvelopeWindowTile","RocketInteriorGasInputPort","RocketInteriorGasOutputPort","RocketInteriorLiquidInputPort","RocketInteriorLiquidOutputPort"}) {
+    if((id=="RocketWallTile"||id=="RocketEnvelopeWindowTile") && Assets.GetBuildingDef(id).ConstructionOffsetFilter!=null)
+     throw new Exception("Hull still excludes working from below: "+id);
     var component=Assets.GetBuildingDef(id).BuildingComplete.GetComponent<Deconstructable>();
     bool original=component.allowDeconstruction;
     try {

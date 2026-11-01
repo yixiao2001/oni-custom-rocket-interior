@@ -5,6 +5,24 @@ using HarmonyLib;
 
 namespace CustomRocketInterior.Patches
 {
+    [HarmonyPatch]
+    internal static class InteriorWallReachabilityPatch
+    {
+        private static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(RocketWallTileConfig), "CreateBuildingDef");
+            yield return AccessTools.Method(typeof(RocketEnvelopeWindowTileConfig), "CreateBuildingDef");
+        }
+
+        private static void Postfix(BuildingDef __result)
+        {
+            // Vanilla hull tiles exclude work from directly below, which prevents
+            // reaching the ceiling from inside. Use normal tile reachability.
+            if (__result != null && InteriorBuildingPolicy.AllowWallDeconstruction)
+                __result.ConstructionOffsetFilter = null;
+        }
+    }
+
     [HarmonyPatch(typeof(Deconstructable), "OnSpawn")]
     internal static class InteriorWallDeconstructionPatch
     {

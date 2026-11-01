@@ -47,7 +47,7 @@ Main Menu → Mods → Custom Rocket Interior → **Options**:
 
 Two Construction options are enabled by default; changing them requires a restart:
 
-- **Allow wall deconstruction** unlocks normal deconstruction of hull/window tiles, including Neutronium. It does not unlock the four fixed gas/liquid ports, interior door or control station. Existing interiors receive the permission when loaded. Turning it off does not restore removed walls.
+- **Allow wall deconstruction** unlocks normal deconstruction of hull/window tiles, including Neutronium. It does not unlock the four fixed gas/liquid ports, interior door or control station. Existing interiors receive the permission when loaded. Hull ceilings use normal-tile work reachability so they can be deconstructed from inside. Turning it off does not restore removed walls.
 - **Mount utilities on any solid tile** allows the six player-built cargo input/output fittings and power plug to use built solid tiles inside rockets: ordinary, insulated, metal and window tiles, for example. Rotation still determines the adjacent supporting side. Natural cells, mesh/airflow tiles and empty space are excluded. Rules outside rocket interiors remain unchanged.
 
 Removing support marks a utility as unsupported and stops cargo exchange; the power plug disconnects from the rocket circuit. Rebuilding valid solid support restores operation. The four fixed ports stay at their original positions. Player-built cargo fittings access storage through the rocket itself and do not depend on the locations of those ports.
