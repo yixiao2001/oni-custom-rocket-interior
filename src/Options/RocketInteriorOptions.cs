@@ -45,5 +45,13 @@ namespace CustomRocketInterior.Options
 
         [Option(StringKeys.WALL_MATERIAL_NAME, StringKeys.WALL_MATERIAL_TOOLTIP, StringKeys.CATEGORY_APPEARANCE)]
         public WallMaterial WallMaterial { get; set; } = WallMaterial.Steel;
+
+        [Option(StringKeys.REMOVABLE_WALLS_NAME, StringKeys.REMOVABLE_WALLS_TOOLTIP, StringKeys.CATEGORY_CONSTRUCTION)]
+        [RestartRequired]
+        public bool AllowWallDeconstruction { get; set; } = true;
+
+        [Option(StringKeys.ANY_SOLID_TILE_NAME, StringKeys.ANY_SOLID_TILE_TOOLTIP, StringKeys.CATEGORY_CONSTRUCTION)]
+        [RestartRequired]
+        public bool AllowPortsOnAnySolidTile { get; set; } = true;
     }
 }

@@ -9,6 +9,7 @@
     <Compile Remove="RuntimeSmoke/**" />
     <Compile Include="../src/Core/InteriorResizer.cs" Link="InteriorResizer.cs" />
     <Compile Include="../src/Config/InteriorSizeConfig.cs" Link="InteriorSizeConfig.cs" />
+    <Compile Include="../src/Config/InteriorBuildingPolicy.cs" Link="InteriorBuildingPolicy.cs" />
     <Compile Include="../src/Options/RocketInteriorOptions.cs" Link="RocketInteriorOptions.cs" />
   </ItemGroup>
 </Project>

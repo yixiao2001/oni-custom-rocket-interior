@@ -86,4 +86,22 @@ Check(unrelated.RefreshCount == 0, "Do not modify unrelated templates containing
 InteriorResizer.ApplyOverride(unrelated, "expansion1::interiors/habitat_medium");
 Verify(unrelated, 10, 94, SimHashes.Steel);
 Check(cached.cells.Count == 38 * 38, "Changing another template leaves cached template intact");
+
+InteriorBuildingPolicy.Apply(new RocketInteriorOptions());
+foreach (string id in new[] { "RocketWallTile", "RocketEnvelopeWindowTile" })
+{
+    Check(InteriorBuildingPolicy.CanDeconstructWall(id, true), "Hull and window tiles can be deconstructed inside rockets");
+    Check(!InteriorBuildingPolicy.CanDeconstructWall(id, false), "Do not unlock hull tiles outside rocket interiors");
+}
+foreach (string id in new[] { null, "", "Tile", "InsulationTile", "ClustercraftInteriorDoor", "RocketControlStation",
+    "RocketInteriorGasInputPort", "RocketInteriorGasOutputPort", "RocketInteriorLiquidInputPort", "RocketInteriorLiquidOutputPort",
+    "RocketInteriorGasInput", "RocketInteriorSolidOutput", "RocketInteriorPowerPlug" })
+    Check(!InteriorBuildingPolicy.CanDeconstructWall(id, true), "Only the explicit hull/window whitelist may change deconstruction permissions");
+Check(InteriorBuildingPolicy.RelaxMounting(true, true, true), "Relax tagged rocket-hull mounting in interiors");
+Check(!InteriorBuildingPolicy.RelaxMounting(false, true, true), "Never relax mounting outside rockets");
+Check(!InteriorBuildingPolicy.RelaxMounting(true, false, true), "Leave unrelated building placement rules alone");
+Check(!InteriorBuildingPolicy.RelaxMounting(true, true, false), "Leave unrelated foundation tag requirements alone");
+InteriorBuildingPolicy.Apply(new RocketInteriorOptions { AllowWallDeconstruction = false, AllowPortsOnAnySolidTile = false });
+Check(!InteriorBuildingPolicy.CanDeconstructWall("RocketWallTile", true), "Disabled option restores wall protection");
+Check(!InteriorBuildingPolicy.RelaxMounting(true, true, true), "Disabled option keeps original hull-only mounting");
 Console.WriteLine($"PASS: {checks:N0} regression assertions (template cache, resize, materials, ports, door, config).");

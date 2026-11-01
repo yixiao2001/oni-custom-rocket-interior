@@ -1,26 +1,50 @@
 [h1]自定义火箭舱内空间 / Custom Rocket Interior[/h1]
 
 [b]━━━━━━ 中文 ━━━━━━[/b]
-自定义《缺氧》太空员舱等火箭模块的内部空间大小与墙体材质。
+自定义《缺氧》火箭舱室大小、墙体材质与内部装修规则。需要《眼冒金星！》DLC。
 [list]
-[*]舱室宽高各 12–96 格自由调节（原版太空员舱仅 12×11），房间自动填满整个火箭内部世界
-[*]墙体材质四选一：钢 / 火成岩 / 中子质（不可破坏）/ 玻璃
-[*]内部世界全图去迷雾，无残留
-[*]游戏内设置界面：主菜单 → 模组 → 选项，对新建的火箭即时生效
-[*]出入口自动吸附左下角，气体/液体端口与控制站自动嵌入新墙线
+[*]内部世界宽高各 12–96 格，四种墙体材质：钢 / 火成岩 / 中子质 / 玻璃
+[*]火箭内部全图去迷雾，出入口、四个固定气液端口与控制站按新布局定位
+[*]设置界面支持英文和简体中文：主菜单 → 模组 → Custom Rocket Interior → 选项
 [/list]
-[b]提示：[/b]只影响新建的火箭（已建成的内部固化在存档中）。需要《眼冒金星！》DLC。
+[b]v0.4.0：可拆内墙与自由装修[/b]
+[list]
+[*]可正常拆除火箭舱壳和窗砖，包括中子质；顶墙也可从舱内施工
+[*]四个自带气液端口、舱门和控制站不会被此选项解锁
+[*]可建造的气体、液体、固体货舱输入输出组件和电力插座，可依附舱内任意自建实心砖，包括普通砖、隔热砖、金属砖和窗砖
+[*]保留旋转方向与支撑要求；不支持悬空、天然格、网格砖或透气砖
+[*]拆去支撑后组件停工，电力插座断开火箭电路；补回有效支撑后恢复
+[/list]
+[b]使用说明[/b]
+[list]
+[*]“允许拆除火箭内墙”和“输入输出组件可依附任意实心砖”默认开启，修改后需要重启；已有舱室读档后也能使用
+[*]尺寸和墙体材质只影响新建火箭，不改写已有舱室布局
+[*]拆墙不会扩大内部世界，也不会移动四个固定端口；关闭开关不会恢复已经拆除的墙
+[*]建议先建好替代外壁再拆旧墙，以保持气密性
+[/list]
 
 [b]━━━━━━ English ━━━━━━[/b]
-Customize the interior size and wall material of rocket habitat modules in Oxygen Not Included.
+Customize rocket interior size, wall material and construction rules. Requires the Spaced Out! DLC.
 [list]
-[*]Width & height adjustable from 12 to 96 tiles each (vanilla Spacefarer Module is only 12x11); the room fills the entire interior world
-[*]Four wall materials: Steel / Igneous Rock / Neutronium (unbreakable) / Glass
-[*]Fog of war fully revealed inside rocket interiors
-[*]In-game options screen (Main Menu -> Mods -> Options); changes apply instantly to newly built rockets
-[*]Door snaps to the bottom-left corner; gas/liquid ports and control station are re-embedded automatically
+[*]Interior world width/height: 12–96 tiles; Steel / Igneous Rock / Neutronium / Glass walls
+[*]Full interior fog reveal; door, fixed gas/liquid ports and control station follow the resized layout
+[*]English/Simplified Chinese options: Main Menu → Mods → Custom Rocket Interior → Options
 [/list]
-[b]Note:[/b] Only affects newly built rockets - existing interiors are baked into your save. Requires the Spaced Out! DLC.
+[b]v0.4.0: Removable walls and rebuilt supports[/b]
+[list]
+[*]Deconstruct hull/window tiles, including Neutronium; ceilings can be reached from inside
+[*]The four fixed gas/liquid ports, interior door and control station stay protected
+[*]Player-built gas/liquid/solid cargo fittings and the power plug can use any built solid tile inside a rocket, including ordinary, insulated, metal and window tiles
+[*]Rotation and support requirements remain; natural cells, mesh/airflow tiles and empty space are excluded
+[*]Removing support stops cargo exchange and disconnects the power plug; rebuilding valid support restores operation
+[/list]
+[b]Notes[/b]
+[list]
+[*]Both new Construction options are enabled by default. Changing them requires a restart; existing interiors gain these features when loaded
+[*]Size/material settings affect newly created interiors only
+[*]Removing walls does not expand the world or move fixed ports. Disabling deconstruction does not restore removed walls
+[*]Build a replacement enclosure before removing the old one to keep it airtight
+[/list]
 
-适配 U59-744825 · Tested on build U59-744825
+适配 U59-744825 · Validated with U59-744825 game assemblies in the installed Moono runtime, plus basic in-save user testing.
 [url=https://github.com/yixiao2001/oni-custom-rocket-interior][b]GitHub 源码 / Source Code[/b][/url]

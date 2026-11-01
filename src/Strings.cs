@@ -40,6 +40,23 @@ namespace CustomRocketInterior
 
             public static LocString CATEGORY_APPEARANCE = new LocString(
                 "Appearance", StringKeys.CATEGORY_APPEARANCE);
+
+            public static LocString CATEGORY_CONSTRUCTION = new LocString(
+                "Construction", StringKeys.CATEGORY_CONSTRUCTION);
+
+            public static LocString REMOVABLE_WALLS_NAME = new LocString(
+                "Allow wall deconstruction", StringKeys.REMOVABLE_WALLS_NAME);
+
+            public static LocString REMOVABLE_WALLS_TOOLTIP = new LocString(
+                "Allow deconstructing rocket hull and window tiles, including Neutronium. The four fixed gas/liquid ports and interior door stay protected. Applies to existing interiors after restarting and loading the save. Deconstruction does not expand the interior world.",
+                StringKeys.REMOVABLE_WALLS_TOOLTIP);
+
+            public static LocString ANY_SOLID_TILE_NAME = new LocString(
+                "Mount utilities on any solid tile", StringKeys.ANY_SOLID_TILE_NAME);
+
+            public static LocString ANY_SOLID_TILE_TOOLTIP = new LocString(
+                "Inside rockets, cargo input/output fittings and the power plug can use any built solid tile as support. Rotation still determines the support side. Natural cells, mesh/airflow tiles and empty space are not valid supports. Utilities stop when support is removed and resume when it is rebuilt. Restart required.",
+                StringKeys.ANY_SOLID_TILE_TOOLTIP);
         }
 
         public static class WALL_MATERIAL
@@ -50,7 +67,7 @@ namespace CustomRocketInterior
                 "Igneous Rock", StringKeys.WALL_IGNEOUS_ROCK_NAME);
 
             public static LocString NEUTRONIUM_NAME = new LocString(
-                "Neutronium (unbreakable)", StringKeys.WALL_NEUTRONIUM_NAME);
+                "Neutronium", StringKeys.WALL_NEUTRONIUM_NAME);
 
             public static LocString GLASS_NAME = new LocString("Glass", StringKeys.WALL_GLASS_NAME);
         }
@@ -175,6 +192,11 @@ namespace CustomRocketInterior
         public const string WALL_MATERIAL_TOOLTIP = Root + "OPTIONS.WALL_MATERIAL_TOOLTIP";
         public const string CATEGORY_SIZE = Root + "OPTIONS.CATEGORY_SIZE";
         public const string CATEGORY_APPEARANCE = Root + "OPTIONS.CATEGORY_APPEARANCE";
+        public const string CATEGORY_CONSTRUCTION = Root + "OPTIONS.CATEGORY_CONSTRUCTION";
+        public const string REMOVABLE_WALLS_NAME = Root + "OPTIONS.REMOVABLE_WALLS_NAME";
+        public const string REMOVABLE_WALLS_TOOLTIP = Root + "OPTIONS.REMOVABLE_WALLS_TOOLTIP";
+        public const string ANY_SOLID_TILE_NAME = Root + "OPTIONS.ANY_SOLID_TILE_NAME";
+        public const string ANY_SOLID_TILE_TOOLTIP = Root + "OPTIONS.ANY_SOLID_TILE_TOOLTIP";
 
         public const string WALL_STEEL_NAME = Root + "WALL_MATERIAL.STEEL_NAME";
         public const string WALL_IGNEOUS_ROCK_NAME = Root + "WALL_MATERIAL.IGNEOUS_ROCK_NAME";
