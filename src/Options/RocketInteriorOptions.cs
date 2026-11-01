@@ -36,11 +36,11 @@ namespace CustomRocketInterior.Options
     public sealed class RocketInteriorOptions
     {
         [Option(StringKeys.INTERIOR_WIDTH_NAME, StringKeys.INTERIOR_WIDTH_TOOLTIP, StringKeys.CATEGORY_SIZE)]
-        [Limit(12, 96)]
+        [Limit(Config.InteriorSizeConfig.MinSize, Config.InteriorSizeConfig.MaxSize)]
         public int WorldWidth { get; set; } = 40;
 
         [Option(StringKeys.INTERIOR_HEIGHT_NAME, StringKeys.INTERIOR_HEIGHT_TOOLTIP, StringKeys.CATEGORY_SIZE)]
-        [Limit(12, 96)]
+        [Limit(Config.InteriorSizeConfig.MinSize, Config.InteriorSizeConfig.MaxSize)]
         public int WorldHeight { get; set; } = 40;
 
         [Option(StringKeys.WALL_MATERIAL_NAME, StringKeys.WALL_MATERIAL_TOOLTIP, StringKeys.CATEGORY_APPEARANCE)]

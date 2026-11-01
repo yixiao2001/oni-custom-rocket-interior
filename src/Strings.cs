@@ -6,23 +6,9 @@ using UnityEngine;
 namespace CustomRocketInterior
 {
     /// <summary>
-    /// 选项界面的字符串表（源语言为英文），与游戏的本地化系统对接。
-    ///
-    /// 为什么必须走 LocString/STRINGS 而不是硬编码中文：
-    ///   PLib 的 LookInStrings(keyOrValue) 会先用 Strings.TryGet 解析传入的字符串——
-    ///   命中已注册的 key 就返回对应语言的译文，否则原样显示。
-    ///   同时 PLib 的 UI 字体是“按语言”取的（PUITuning.Fonts：
-    ///   Localization.GetSelectedLanguageType() != 0 时用 Localization.FontAsset，
-    ///   否则用纯拉丁字体 NotoSans-Regular / GRAYSTROKE REGULAR SDF）。
-    ///   硬编码中文在英文（未选语言）下会以拉丁字库渲染 → 缺字（方框/不可读）
-    ///   甚至触发字形处理异常导致崩溃；这也是英文用户“看不清选项”的直接原因。
-    ///   正确做法：代码里用英文源文本 + key 注册，中文放到 translations/zh.po，
-    ///   由游戏/PLib 按语言套用，任何语言下文本与字库覆盖都匹配。
-    ///
-    /// key 命名规则（游戏生成，勿手改）：
-    ///   LocString.CreateLocStringKeys(typeof(STRINGS), "CustomRocketInterior.")
-    ///   → "CustomRocketInterior.STRINGS." + [嵌套类名.] + 字段名
-    ///   与 Localization.OverloadStrings 反查的 key 路径完全一致。
+    /// English source strings with a Simplified Chinese translation. PLib resolves
+    /// option labels through Strings; font compatibility is handled by the U59
+    /// netstandard2.1 PLib asset, independently of localization.
     /// </summary>
     public static class STRINGS
     {

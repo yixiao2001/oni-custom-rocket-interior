@@ -8,7 +8,7 @@ namespace CustomRocketInterior.Config
     /// </summary>
     internal static class InteriorSizeConfig
     {
-        public const int MinSize = 8;
+        public const int MinSize = 12;
         public const int MaxSize = 96;
 
         /// <summary>
@@ -38,9 +38,15 @@ namespace CustomRocketInterior.Config
                 return;
             }
 
+            o.WorldWidth = Mathf.Clamp(o.WorldWidth, MinSize, MaxSize);
+            o.WorldHeight = Mathf.Clamp(o.WorldHeight, MinSize, MaxSize);
+            if (!System.Enum.IsDefined(typeof(WallMaterial), o.WallMaterial))
+            {
+                o.WallMaterial = WallMaterial.Steel;
+            }
+
             WorldSize = new Vector2I(
-                Mathf.Clamp(o.WorldWidth, MinSize, MaxSize),
-                Mathf.Clamp(o.WorldHeight, MinSize, MaxSize));
+                o.WorldWidth, o.WorldHeight);
             WallElement = ToElement(o.WallMaterial);
             LastWallMaterial = o.WallMaterial;
         }
