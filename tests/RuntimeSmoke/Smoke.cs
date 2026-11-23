@@ -15,6 +15,13 @@ static class MainMenuSmoke {
   yield return new WaitForSeconds(3f);
   try {
    var asm=typeof(CustomRocketInterior.Mod).Assembly;
+   var foundationChecks = typeof(BuildingDef).GetMethods(BindingFlags.Public | BindingFlags.Static)
+    .Where(m => m.Name == nameof(BuildingDef.CheckFoundation)).OrderByDescending(m => m.GetParameters().Length).ToArray();
+   var patchedChecks = foundationChecks.Where(m => Harmony.GetPatchInfo(m)?.Prefixes
+    .Any(p => p.PatchMethod.DeclaringType.Assembly == asm) == true).ToArray();
+   if (foundationChecks.Length == 0 || patchedChecks.Length != 1 || patchedChecks[0] != foundationChecks[0])
+    throw new Exception("Foundation patch must target only the implementation used for placement and support monitoring");
+   Debug.Log("[CRI-SMOKE] Verified foundation patch binding: " + patchedChecks[0]);
    var type=asm.GetType("PeterHan.PLib.Options.OptionsDialog",true);
    var flags=BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance;
    Debug.Log("[CRI-SMOKE] Embedded options provider: "+type.Assembly.FullName);
@@ -50,13 +57,18 @@ static class MainMenuSmoke {
    var utilityPatch=asm.GetType("CustomRocketInterior.Patches.InteriorUtilityFoundationPatch");
    var solidTile=utilityPatch.GetMethod("IsBuiltSolidTile",BindingFlags.Static|BindingFlags.NonPublic);
    foreach(string id in new[]{"Tile","InsulationTile","MetalTile","GlassTile","RocketWallTile","RocketEnvelopeWindowTile","MeshTile","GasPermeableMembrane"}) {
-    bool valid=(bool)solidTile.Invoke(null,new object[]{Assets.GetBuildingDef(id).BuildingComplete});
+    var tile=Assets.GetBuildingDef(id).BuildingComplete;
+    bool valid=(bool)solidTile.Invoke(null,new object[]{tile,default(Tag)});
     bool expected=id!="MeshTile"&&id!="GasPermeableMembrane";
     if(valid!=expected) throw new Exception("Wrong solid support classification for "+id);
+    if((bool)solidTile.Invoke(null,new object[]{tile,GameTags.UnderConstruction})!=expected)
+     throw new Exception("Completed support should pass the under-construction exclusion: "+id);
+    if((bool)solidTile.Invoke(null,new object[]{tile,GameTags.FloorTiles}))
+     throw new Exception("Support with a forbidden tag accepted: "+id);
    }
    foreach(string id in new[]{"RocketInteriorGasInput","RocketInteriorGasOutput","RocketInteriorLiquidInput","RocketInteriorLiquidOutput","RocketInteriorSolidInput","RocketInteriorSolidOutput","RocketInteriorPowerPlug"})
     if(!Assets.GetBuildingDef(id).ContinuouslyCheckFoundation) throw new Exception("Support monitoring missing: "+id);
-   Debug.Log("[CRI-SMOKE] Real solid-tile prefabs accepted, mesh/airflow rejected; seven utilities monitor support");
+   Debug.Log("[CRI-SMOKE] Real solid-tile prefabs and forbidden tags verified; mesh/airflow rejected; seven utilities monitor support");
    var plug=Assets.GetBuildingDef("RocketInteriorPowerPlug").BuildingComplete;
    var support=plug.GetComponent<CustomRocketInterior.Core.InteriorPowerPlugSupport>();
    if(support==null) throw new Exception("Power plug support gate missing");

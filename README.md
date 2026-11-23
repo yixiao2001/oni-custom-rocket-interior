@@ -4,7 +4,7 @@
 
 自定义《缺氧 (Oxygen Not Included)》**太空员舱**等火箭模块的**内部空间大小与墙体材质**。
 
-适配版本：U59-744825（本体 + 《眼冒金星！》DLC）
+支持 U59-744825 和 U60-764025（需要《眼冒金星！》DLC）。v0.4.1 修复了 U60 启动时火箭舱接口支撑检查导致的模组加载失败。
 
 ## 功能
 
@@ -77,14 +77,14 @@
 > ⚠️ **发布必须使用官方工具**：Steam 库 → 工具 → "Oxygen Not Included - Mod Uploader"。
 > 用 steamcmd 直接上传会产生游戏无法读取的散装内容格式，导致所有订阅者"下载失败"。
 
-- 编译需 .NET SDK 8 与 U59 游戏本体（目标 netstandard2.1）；游戏路径通过环境变量 `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` 或直接改 csproj 配置；
+- 编译需 .NET SDK 8 与 U59 或 U60 游戏本体（目标 netstandard2.1）；游戏路径通过环境变量 `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` 或直接改 csproj 配置；
 - 反编译查源码：`ilspycmd -t 类名 <Managed目录>/Assembly-CSharp.dll`；
 - 项目结构与设计原则见下方目录树与代码注释。
 
 ### 发布到 Steam 创意工坊
 
 ```bash
-./publish.sh    # 编译、运行回归测试、生成 release/CustomRocketInterior-v0.4.0.zip
+./publish.sh    # 编译、运行回归测试、生成 release/CustomRocketInterior-v0.4.1.zip
 ```
 
 打开 Steam 库 → 工具 → **Oxygen Not Included Mod Uploader**，选择现有的
