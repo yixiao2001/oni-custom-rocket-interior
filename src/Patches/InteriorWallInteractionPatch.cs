@@ -43,11 +43,22 @@ namespace CustomRocketInterior.Patches
         }
     }
 
-    [HarmonyPatch(typeof(BuildingDef), nameof(BuildingDef.CheckFoundation))]
+    [HarmonyPatch]
     internal static class InteriorUtilityFoundationPatch
     {
-        private static bool Prefix(int cell, Orientation orientation, BuildLocationRule location_rule,
-            int width, Tag optionalFoundationRequiredTag, ref bool __result)
+        // U60's six-argument placement check forwards here. Foundation monitoring
+        // calls this overload directly to exclude supports still under construction.
+        internal static readonly MethodInfo WithForbiddenTag = typeof(BuildingDef).GetMethod(
+            nameof(BuildingDef.CheckFoundation), new[] {
+                typeof(int), typeof(Orientation), typeof(BuildLocationRule), typeof(int), typeof(int), typeof(Tag), typeof(Tag)
+            });
+
+        private static bool Prepare() => WithForbiddenTag != null;
+        private static MethodBase TargetMethod() => WithForbiddenTag;
+
+        [HarmonyPrefix]
+        internal static bool CheckSupport(int cell, Orientation orientation, BuildLocationRule location_rule,
+            int width, Tag optionalFoundationRequiredTag, Tag optionalFoundationForbiddenTag, ref bool __result)
         {
             if (!InteriorBuildingPolicy.AllowPortsOnAnySolidTile
                 || location_rule != BuildLocationRule.OnRocketEnvelope
@@ -58,17 +69,18 @@ namespace CustomRocketInterior.Patches
             if (!InteriorBuildingPolicy.RelaxMounting(world != null && world.IsModuleInterior, true, true))
                 return true;
 
-            __result = HasBuiltSolidSupport(cell, orientation, width);
+            __result = HasBuiltSolidSupport(cell, orientation, width, optionalFoundationForbiddenTag);
             return false;
         }
 
-        internal static bool IsBuiltSolidTile(UnityEngine.GameObject tile)
+        internal static bool IsBuiltSolidTile(UnityEngine.GameObject tile, Tag forbiddenTag)
         {
             return tile != null && tile.HasTag(GameTags.FloorTiles)
+                && (!forbiddenTag.IsValid || !tile.HasTag(forbiddenTag))
                 && tile.GetComponent<SimCellOccupier>()?.doReplaceElement == true;
         }
 
-        private static bool HasBuiltSolidSupport(int cell, Orientation orientation, int width)
+        private static bool HasBuiltSolidSupport(int cell, Orientation orientation, int width, Tag forbiddenTag)
         {
             // Same supporting side/rotation as vanilla OnRocketEnvelope. Mesh and
             // airflow tiles also set Grid.Solid for walking, so check the actual
@@ -79,11 +91,24 @@ namespace CustomRocketInterior.Patches
                 if (!Grid.IsCellOffsetValid(cell, offset)) return false;
                 int support = Grid.OffsetCell(cell, offset);
                 if (!Grid.IsValidBuildingCell(support) || Grid.WorldIdx[support] != Grid.WorldIdx[cell]
-                    || !Grid.Solid[support] || !IsBuiltSolidTile(Grid.Objects[support, (int)ObjectLayer.FoundationTile]))
+                    || !Grid.Solid[support] || !IsBuiltSolidTile(Grid.Objects[support, (int)ObjectLayer.FoundationTile], forbiddenTag))
                     return false;
             }
             return true;
         }
+    }
+
+    [HarmonyPatch(typeof(BuildingDef), nameof(BuildingDef.CheckFoundation), new[] {
+        typeof(int), typeof(Orientation), typeof(BuildLocationRule), typeof(int), typeof(int), typeof(Tag)
+    })]
+    internal static class LegacyInteriorUtilityFoundationPatch
+    {
+        private static bool Prepare() => InteriorUtilityFoundationPatch.WithForbiddenTag == null;
+
+        private static bool Prefix(int cell, Orientation orientation, BuildLocationRule location_rule,
+            int width, Tag optionalFoundationRequiredTag, ref bool __result) =>
+            InteriorUtilityFoundationPatch.CheckSupport(cell, orientation, location_rule,
+                width, optionalFoundationRequiredTag, default, ref __result);
     }
 
     [HarmonyPatch]

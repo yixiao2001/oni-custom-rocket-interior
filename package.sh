@@ -15,6 +15,9 @@ dotnet build src/CustomRocketInterior.csproj -c Release -p:ONI_MODS_DEV_DIR=/non
 dotnet run --project tests/RegressionTests.csproj -c Release
 dotnet run --project tests/RegressionTests.csproj -c Release --no-build -- \
   --check-mod src/bin/Release/netstandard2.1/CustomRocketInterior.dll
+MANAGED="${ONI_MANAGED_DIR:-/mnt/d/SteamLibrary/steamapps/common/OxygenNotIncluded/OxygenNotIncluded_Data/Managed}"
+dotnet run --project tests/RegressionTests.csproj -c Release --no-build -- \
+  --check-foundation src/bin/Release/netstandard2.1/CustomRocketInterior.dll "$MANAGED"
 
 echo "== stage v$VERSION =="
 rm -rf "$STAGE" && mkdir -p "$STAGE"

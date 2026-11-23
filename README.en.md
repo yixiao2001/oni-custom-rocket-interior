@@ -4,7 +4,7 @@ English | [简体中文](README.md)
 
 Customize the **interior size and wall material** of rocket habitat modules in *Oxygen Not Included*.
 
-Tested on build U59-744825 (base game + *Spaced Out!* DLC).
+Supports U59-744825 and U60-764025 with the *Spaced Out!* DLC. Version 0.4.1 fixes a U60 startup failure in the rocket interior fitting support check.
 
 ## Features
 
@@ -73,7 +73,7 @@ See the source comments (header of `src/Core/InteriorResizer.cs`) for full detai
 > ⚠️ **Publish only with the official tool**: Steam Library -> Tools -> "Oxygen Not Included - Mod Uploader".
 > Uploading via raw steamcmd produces a loose file layout the game cannot read; every subscriber gets a download failure.
 
-- Building requires .NET SDK 8 and U59 game assemblies (target: netstandard2.1); configure paths via the `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` environment variables or directly in the csproj;
+- Building requires .NET SDK 8 and U59 or U60 game assemblies (target: netstandard2.1); configure paths via the `ONI_MANAGED_DIR` / `ONI_MODS_DEV_DIR` environment variables or directly in the csproj;
 - Inspect game code with: `ilspycmd -t TypeName <Managed dir>/Assembly-CSharp.dll`.
 
 ### Publishing to the Steam Workshop

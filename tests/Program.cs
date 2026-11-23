@@ -5,6 +5,12 @@ using CustomRocketInterior.Core;
 using CustomRocketInterior.Options;
 using TemplateClasses;
 
+if (args.Length == 3 && args[0] == "--check-foundation")
+{
+    FoundationCompatibility.Check(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--check-mod")
 {
     using var pe = new PEReader(File.OpenRead(args[1]));
